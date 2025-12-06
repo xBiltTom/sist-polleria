@@ -52,4 +52,8 @@ class Empleado extends Model
         return $this->hasMany(OrdenAbastecimiento::class, 'idJefeAbastecimiento');
     }
 
+    public function user(){
+        return $this->hasOne(User::class,'idEmpleado');
+    }
+
 }
