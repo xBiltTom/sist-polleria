@@ -16,4 +16,13 @@ class CategoriaProducto extends Model
         'estadoDB',
         'vendibles'
     ];
+
+    protected $casts = [
+        'estadoDB' => 'boolean',
+        'vendibles' => 'boolean'
+    ];
+
+    public function productos(){
+        return $this->hasMany(Producto::class,'idCategoriaProducto');
+    }
 }
