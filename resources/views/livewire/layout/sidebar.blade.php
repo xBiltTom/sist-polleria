@@ -142,10 +142,10 @@ new class extends Component
         'lg:translate-x-0': sidebarOpen,
         'lg:-translate-x-full': !sidebarOpen
     }"
-    class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-polleria-dark-900 border-r border-gray-200 dark:border-polleria-dark-800 transform transition-transform duration-300 ease-in-out"
+    class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-polleria-dark-900 border-r border-gray-200 dark:border-polleria-dark-800 transform transition-transform duration-300 ease-in-out flex flex-col"
 >
     <!-- Logo y nombre de la app -->
-    <div class="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-polleria-dark-800 bg-polleria-500 dark:bg-polleria-dark-900">
+    <div class="flex-shrink-0 flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-polleria-dark-800 bg-polleria-500 dark:bg-polleria-dark-900">
         <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center space-x-3">
             <!-- Icono de pollo/pollería -->
             <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@ new class extends Component
         </a>
     </div>
 
-    <!-- Navigation Menu -->
+    <!-- Navigation Menu con scroll propio -->
     <nav class="flex-1 overflow-y-auto py-4 px-3">
         @foreach($this->getMenuItems() as $group)
             @php
@@ -189,8 +189,8 @@ new class extends Component
         @endforeach
     </nav>
 
-    <!-- User Info at Bottom -->
-    <div class="border-t border-gray-200 dark:border-polleria-dark-800 p-4">
+    <!-- User Info at Bottom (fijo abajo) -->
+    <div class="flex-shrink-0 border-t border-gray-200 dark:border-polleria-dark-800 p-4">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-10 h-10 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white font-semibold">

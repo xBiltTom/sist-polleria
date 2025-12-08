@@ -14,8 +14,8 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-polleria-dark-950">
-        <div x-data="{ sidebarOpen: true, sidebarMobileOpen: false }" x-init="sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false'" x-effect="localStorage.setItem('sidebarOpen', sidebarOpen)" class="min-h-screen flex">
+    <body class="font-sans antialiased bg-gray-50 dark:bg-polleria-dark-950 overflow-hidden">
+        <div x-data="{ sidebarOpen: true, sidebarMobileOpen: false }" x-init="sidebarOpen = localStorage.getItem('sidebarOpen') !== 'false'" x-effect="localStorage.setItem('sidebarOpen', sidebarOpen)" class="h-screen flex overflow-hidden">
 
             <!-- Sidebar Overlay (Mobile) -->
             <div
@@ -35,14 +35,16 @@
 
             <!-- Main Content Area -->
             <div
-                class="flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out"
+                class="flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out"
                 :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'"
             >
-                <!-- Navbar -->
-                <livewire:layout.navbar />
+                <!-- Navbar (siempre visible) -->
+                <div class="flex-shrink-0">
+                    <livewire:layout.navbar />
+                </div>
 
-                <!-- Page Content -->
-                <main class="flex-1 p-3 lg:p-4">
+                <!-- Page Content (con scroll propio) -->
+                <main class="flex-1 overflow-y-auto p-3 lg:p-4">
                     <!-- Page Header -->
                     @if (isset($header))
                         <div class="mb-4">
@@ -54,12 +56,12 @@
                     <div class="bg-white dark:bg-polleria-dark-900 rounded-xl shadow-sm border border-gray-200 dark:border-polleria-dark-800">
                         {{ $slot }}
                     </div>
-                </main>
 
-                <!-- Footer -->
-                <footer class="py-3 px-4 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-polleria-dark-800">
-                    <p>&copy; {{ date('Y') }} {{ config('app.name', 'Pollería') }}. Todos los derechos reservados.</p>
-                </footer>
+                    <!-- Footer -->
+                    <footer class="py-3 mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                        <p>&copy; {{ date('Y') }} {{ config('app.name', 'Pollería') }}. Todos los derechos reservados.</p>
+                    </footer>
+                </main>
             </div>
         </div>
     </body>
