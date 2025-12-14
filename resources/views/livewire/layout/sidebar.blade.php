@@ -90,7 +90,7 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Empleados',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'empleados.index', // Cambiar por la ruta real
                         'icon' => 'user-group',
                         'permission' => 'ver-empleados',
                     ],
@@ -110,6 +110,94 @@ new class extends Component
                         'route' => 'dashboard', // Cambiar por la ruta real
                         'icon' => 'shield-check',
                         'permission' => 'ver-roles',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Modelos de Estado',
+                'items' => [
+                    [
+                        'name' => 'Estado Empleado',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Cliente',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Pedido',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado de Mesa',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Preparacion',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Proveedor',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Modelos Catálogo',
+                'items' => [
+                    [
+                        'name' => 'Categoría Producto',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Cliente',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Empleado',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Comprobante',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo de Pedido',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo de Operacion en Almacen',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Modalidad de pago en pedido',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
                     ],
                 ],
             ],
@@ -151,14 +239,18 @@ new class extends Component
             <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
-            <span class="text-xl font-bold text-white">Pollería</span>
+            <span class="text-xl font-bold text-white">Don Pollón</span>
         </a>
     </div>
 
     <!-- Navigation Menu con scroll propio -->
     <nav class="flex-1 overflow-y-auto py-4 px-3">
         @foreach($this->getMenuItems() as $group)
-            @php
+            @php /* Inicia codigo php dentro de una vista blade */
+                /* Primero declara una variable local llamada visible items que almacenará el resultado final de la operación.
+                    Luego con el metodo collet convertira $group['items'] en una coleccion de laravel.
+                    Se usa el metodo filter el cual va a iterar sobre cada item para comprobar que si tenga el permiso.
+                */
                 $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess($item['permission'] ?? null));
             @endphp
 

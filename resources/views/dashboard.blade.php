@@ -1,4 +1,4 @@
-<x-dashboard-layout title="Dashboard">
+<x-dashboard-layout title="Principal">
     <x-slot name="header">
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
             Dashboard

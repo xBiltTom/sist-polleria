@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?? config('app.name', 'Pollería') }} - Dashboard</title>
+        <title>{{ $title ?? config('app.name', 'Pollería') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -64,5 +64,8 @@
                 </main>
             </div>
         </div>
+
+        {{-- SweetAlert Flash Messages --}}
+        <x-swal-flash />
     </body>
 </html>
