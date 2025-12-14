@@ -56,7 +56,7 @@ new class extends Component
                     ],
                     [
                         'name' => 'Insumos',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'insumo.index', 
                         'icon' => 'archive-box',
                         'permission' => 'ver-insumos',
                     ],
@@ -73,7 +73,7 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Proveedores',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'proveedor.index',
                         'icon' => 'truck',
                         'permission' => 'ver-proveedores',
                     ],
@@ -94,6 +94,12 @@ new class extends Component
                         'icon' => 'user-group',
                         'permission' => 'ver-empleados',
                     ],
+                    [
+                        'name' => 'Contactos de Proveedores',
+                        'route' => 'contacto-proveedor.index',
+                        'icon' => 'phone-book',
+                        'permission' => 'ver-contactos-proveedor',
+                    ]
                 ],
             ],
             [
@@ -142,13 +148,13 @@ new class extends Component
                     ],
                     [
                         'name' => 'Estado Preparacion',
-                        'route' => 'dashboard',
+                        'route' => 'estado-preparacion.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
                         'name' => 'Estado Proveedor',
-                        'route' => 'dashboard',
+                        'route' => 'estado-proveedor.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
@@ -171,13 +177,13 @@ new class extends Component
                     ],
                     [
                         'name' => 'Tipo Empleado',
-                        'route' => 'dashboard',
+                        'route' => 'tipo-empleado.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
                         'name' => 'Tipo Comprobante',
-                        'route' => 'dashboard',
+                        'route' => 'tipo-comprobante.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
@@ -189,13 +195,19 @@ new class extends Component
                     ],
                     [
                         'name' => 'Tipo de Operacion en Almacen',
-                        'route' => 'dashboard',
+                        'route' => 'tipo-operacion-almacen.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
                         'name' => 'Modalidad de pago en pedido',
-                        'route' => 'dashboard',
+                        'route' => 'modalidad-pago-pedido.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo de pago en pedido',
+                        'route' => 'tipo-pago-pedido.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
