@@ -19,8 +19,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Cargar rutas por módulo
     require __DIR__.'/empleados.php';
+    require __DIR__.'/productos.php';
+    require __DIR__.'/clientes.php';
+    require __DIR__.'/mesas.php';
+    require __DIR__.'/categorias.php';
+    require __DIR__.'/tipos-cliente.php';
+    require __DIR__.'/estados-mesa.php';
+    require __DIR__.'/tipos-pago-pedido.php';
+    require __DIR__.'/estados-pedido.php';
    /*  require __DIR__.'/dashboard/pedidos.php';
-    require __DIR__.'/dashboard/mesas.php';
     require __DIR__.'/dashboard/inventario.php';
     require __DIR__.'/dashboard/compras.php';
     require __DIR__.'/dashboard/configuracion.php'; */
