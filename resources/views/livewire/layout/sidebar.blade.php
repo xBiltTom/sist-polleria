@@ -33,13 +33,13 @@ new class extends Component
                     ],
                     [
                         'name' => 'Mesas',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'mesas.index',
                         'icon' => 'table-cells',
                         'permission' => 'ver-mesas',
                     ],
                     [
                         'name' => 'Clientes',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'clientes.index',
                         'icon' => 'users',
                         'permission' => 'ver-clientes',
                     ],
@@ -50,7 +50,7 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Productos',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'productos.index',
                         'icon' => 'cube',
                         'permission' => 'ver-productos',
                     ],
@@ -90,7 +90,7 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Empleados',
-                        'route' => 'empleados.index', // Cambiar por la ruta real
+                        'route' => 'empleados.index',
                         'icon' => 'user-group',
                         'permission' => 'ver-empleados',
                     ],
@@ -136,14 +136,14 @@ new class extends Component
                     ],
                     [
                         'name' => 'Estado Pedido',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
+                        'route' => 'estados-pedido.index',
+                        'icon' => 'clipboard-document-check',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
                         'name' => 'Estado de Mesa',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
+                        'route' => 'estados-mesa.index',
+                        'icon' => 'check-circle',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
@@ -165,14 +165,14 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Categoría Producto',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
+                        'route' => 'categorias.index',
+                        'icon' => 'folder',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
                         'name' => 'Tipo Cliente',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
+                        'route' => 'tipos-cliente.index',
+                        'icon' => 'user-circle',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
@@ -188,9 +188,9 @@ new class extends Component
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
-                        'name' => 'Tipo de Pedido',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
+                        'name' => 'Tipo de Pago Pedido',
+                        'route' => 'tipos-pago-pedido.index',
+                        'icon' => 'credit-card',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
                     [
