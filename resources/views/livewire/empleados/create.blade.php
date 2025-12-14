@@ -126,16 +126,15 @@
 
                 {{-- Foto --}}
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Foto</label>
-                    <input
-                        type="file"
-                        wire:model="urlFotoEmpleado"
-                        accept="image/*"
-                        class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300"
-                    >
-                    @if($urlFotoEmpleado)
-                        <img src="{{ $urlFotoEmpleado->temporaryUrl() }}" class="mt-2 w-20 h-20 rounded-full object-cover">
-                    @endif
+                    <x-image-upload
+                        wire:model="fotoEmpleado"
+                        label="Foto del empleado"
+                        :preview="$this->fotoPreview"
+                        :is-uploading="$isUploading"
+                        preview-type="avatar"
+                        hint="PNG, JPG o WEBP hasta 2MB"
+                        :error="$errors->first('fotoEmpleado')"
+                    />
                 </div>
             </div>
 

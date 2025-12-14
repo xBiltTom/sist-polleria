@@ -56,7 +56,7 @@ new class extends Component
                     ],
                     [
                         'name' => 'Insumos',
-                        'route' => 'insumo.index', 
+                        'route' => 'insumo.index',
                         'icon' => 'archive-box',
                         'permission' => 'ver-insumos',
                     ],
@@ -297,9 +297,17 @@ new class extends Component
     <div class="flex-shrink-0 border-t border-gray-200 dark:border-polleria-dark-800 p-4">
         <div class="flex items-center">
             <div class="flex-shrink-0">
-                <div class="w-10 h-10 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white font-semibold">
-                    {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                </div>
+                @if(auth()->user()->empleado?->urlFotoEmpleado)
+                    <img
+                        src="{{ auth()->user()->empleado->urlFotoEmpleado }}"
+                        alt="{{ auth()->user()->name }}"
+                        class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+                    >
+                @else
+                    <div class="w-10 h-10 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white font-semibold">
+                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                    </div>
+                @endif
             </div>
             <div class="ml-3 min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-900 dark:text-white truncate">

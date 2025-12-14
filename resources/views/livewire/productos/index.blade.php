@@ -69,10 +69,10 @@
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     @if($producto->urlImagenProducto)
-                                        <img src="{{ Storage::url($producto->urlImagenProducto) }}" class="w-12 h-12 rounded-lg object-cover">
+                                        <img src="{{ $producto->urlImagenProducto }}" alt="{{ $producto->nombreProducto }}" class="w-12 h-12 rounded-lg object-cover ring-2 ring-gray-200 dark:ring-gray-700">
                                     @else
-                                        <div class="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                                            <span class="text-primary-600 dark:text-primary-400 font-medium text-sm">
+                                        <div class="w-12 h-12 rounded-lg bg-polleria-100 dark:bg-polleria-900 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700">
+                                            <span class="text-polleria-600 dark:text-polleria-400 font-medium text-sm">
                                                 {{ strtoupper(substr($producto->nombreProducto, 0, 2)) }}
                                             </span>
                                         </div>

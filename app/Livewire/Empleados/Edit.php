@@ -6,12 +6,14 @@ use App\Models\Empleado;
 use App\Models\TipoEmpleado;
 use App\Models\EstadoEmpleado;
 use App\Traits\WithSweetAlert;
+use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Log;
 
 class Edit extends Component
 {
-    use WithFileUploads, WithSweetAlert;
+    use WithFileUploads, WithSweetAlert, WithCloudinaryUpload;
 
     public Empleado $empleado;
 
@@ -22,7 +24,7 @@ class Edit extends Component
     public string $emailEmpleado = '';
     public ?int $idTipoEmpleado = null;
     public ?int $idEstadoEmpleado = null;
-    public $urlFotoEmpleado;
+    public $fotoEmpleado; // Archivo temporal de Livewire
 
     protected $listeners = ['save'];
 
@@ -46,7 +48,7 @@ class Edit extends Component
             'emailEmpleado' => 'nullable|email|max:100',
             'idTipoEmpleado' => 'required|exists:tipo_empleado,idTipoEmpleado',
             'idEstadoEmpleado' => 'required|exists:estado_empleado,idEstadoEmpleado',
-            'urlFotoEmpleado' => 'nullable|image|max:2048'
+            'fotoEmpleado' => 'nullable|image|max:2048'
         ];
     }
 
@@ -65,9 +67,29 @@ class Edit extends Component
         try {
             $validated = $this->validate();
 
-            if ($this->urlFotoEmpleado) {
-                $validated['urlFotoEmpleado'] = $this->urlFotoEmpleado->store('empleados', 'public');
+            // Procesar subida de imagen a Cloudinary
+            if ($this->fotoEmpleado) {
+                try {
+                    $cloudinaryData = $this->uploadToCloudinary($this->fotoEmpleado, 'empleados');
+                    $validated['urlFotoEmpleado'] = $cloudinaryData['url'];
+                    $validated['idFotoEmpleado'] = $cloudinaryData['public_id'];
+
+                    // Eliminar imagen anterior de Cloudinary
+                    if ($this->empleado->idFotoEmpleado) {
+                        $this->deleteFromCloudinary($this->empleado->idFotoEmpleado);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error al subir imagen a Cloudinary: ' . $e->getMessage());
+                    $this->errorAlert(
+                        title: 'Error',
+                        text: 'No se pudo subir la imagen. Verifique su conexión o intente con otra imagen.'
+                    );
+                    return;
+                }
             }
+
+            // Eliminar el campo del archivo temporal antes de guardar
+            unset($validated['fotoEmpleado']);
 
             $this->empleado->update($validated);
 
@@ -81,11 +103,28 @@ class Edit extends Component
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
+            Log::error('Error al actualizar empleado: ' . $e->getMessage());
             $this->errorAlert(
                 title: 'Error',
-                text: 'No se pudo actualizar el empleado. Inténtelo nuevamente.'
+                text: 'No se pudo actualizar el empleado. ' . $e->getMessage()
             );
         }
+    }
+
+    /**
+     * Obtiene la URL de previsualización de la foto (temporal o existente)
+     */
+    public function getFotoPreviewProperty(): ?string
+    {
+        return $this->getPreviewUrl($this->fotoEmpleado);
+    }
+
+    /**
+     * Obtiene la URL de la imagen existente en Cloudinary
+     */
+    public function getExistingImageProperty(): ?string
+    {
+        return $this->empleado->urlFotoEmpleado;
     }
 
     public function render()

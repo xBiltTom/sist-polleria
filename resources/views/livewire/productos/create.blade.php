@@ -105,25 +105,15 @@
 
                 {{-- Imagen del Producto --}}
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Imagen del Producto
-                    </label>
-                    <input
-                        type="file"
-                        wire:model="urlImagenProducto"
-                        accept="image/*"
-                        class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900 dark:file:text-primary-300"
-                    >
-                    @error('urlImagenProducto')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                    
-                    @if($urlImagenProducto)
-                        <div class="mt-3">
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Vista previa:</p>
-                            <img src="{{ $urlImagenProducto->temporaryUrl() }}" class="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 dark:border-gray-600">
-                        </div>
-                    @endif
+                    <x-image-upload
+                        wire:model="imagenProducto"
+                        label="Imagen del producto"
+                        :preview="$this->imagenPreview"
+                        :is-uploading="$isUploading"
+                        preview-type="card"
+                        hint="PNG, JPG o WEBP hasta 2MB"
+                        :error="$errors->first('imagenProducto')"
+                    />
                 </div>
             </div>
 

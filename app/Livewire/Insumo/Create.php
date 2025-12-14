@@ -4,17 +4,18 @@ namespace App\Livewire\Insumo;
 
 use App\Models\Insumo;
 use App\Traits\WithSweetAlert;
+use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class Create extends Component
 {
-    use WithFileUploads, WithSweetAlert;
+    use WithFileUploads, WithSweetAlert, WithCloudinaryUpload;
 
     public string $nombreInsumo = '';
     public string $descripcionInsumo = '';
     public string $precioUnitarioInsumo = '';
-    public $imagenInsumo;
+    public $fotoInsumo; // Archivo temporal de Livewire
 
     protected $listeners = ['save'];
 
@@ -24,7 +25,7 @@ class Create extends Component
             'nombreInsumo' => 'required|string|max:100',
             'descripcionInsumo' => 'nullable|string|max:255',
             'precioUnitarioInsumo' => 'required|numeric|min:0',
-            'imagenInsumo' => 'nullable|image|max:2048',
+            'fotoInsumo' => 'nullable|image|max:2048',
         ];
     }
 
@@ -34,7 +35,8 @@ class Create extends Component
             'nombreInsumo.required' => 'El nombre es obligatorio.',
             'precioUnitarioInsumo.required' => 'El precio unitario es obligatorio.',
             'precioUnitarioInsumo.numeric' => 'El precio debe ser un número válido.',
-            'imagenInsumo.image' => 'El archivo debe ser una imagen.',
+            'fotoInsumo.image' => 'El archivo debe ser una imagen.',
+            'fotoInsumo.max' => 'La imagen no puede exceder 2MB.',
         ];
     }
 
@@ -53,9 +55,15 @@ class Create extends Component
         try {
             $validated = $this->validate();
 
-            if ($this->imagenInsumo) {
-                $validated['imagenInsumo'] = $this->imagenInsumo->store('insumos', 'public');
+            // Procesar subida de imagen a Cloudinary
+            if ($this->fotoInsumo) {
+                $cloudinaryData = $this->uploadToCloudinary($this->fotoInsumo, 'insumos');
+                $validated['imagenInsumo'] = $cloudinaryData['url'];
+                $validated['idImagenInsumo'] = $cloudinaryData['public_id'];
             }
+
+            // Eliminar el campo del archivo temporal antes de guardar
+            unset($validated['fotoInsumo']);
 
             Insumo::create($validated);
 
@@ -74,6 +82,14 @@ class Create extends Component
                 text: 'No se pudo registrar el insumo. Inténtelo nuevamente.'
             );
         }
+    }
+
+    /**
+     * Obtiene la URL de previsualización de la imagen
+     */
+    public function getImagenPreviewProperty(): ?string
+    {
+        return $this->getPreviewUrl($this->fotoInsumo);
     }
 
     public function render()

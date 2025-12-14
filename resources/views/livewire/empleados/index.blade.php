@@ -69,16 +69,15 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-3">
-                                    {{-- Para agregar imagenes: --}}
-                                    {{-- @if($empleado->foto)
-                                        <img src="{{ Storage::url($empleado->foto) }}" class="w-8 h-8 rounded-full object-cover">
+                                    @if($empleado->urlFotoEmpleado)
+                                        <img src="{{ $empleado->urlFotoEmpleado }}" alt="{{ $empleado->nombreEmpleado }}" class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700">
                                     @else
-                                        <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                                            <span class="text-primary-600 dark:text-primary-400 font-medium text-xs">
-                                                {{ strtoupper(substr($empleado->nombre, 0, 1)) }}
+                                        <div class="w-10 h-10 rounded-full bg-polleria-100 dark:bg-polleria-900 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700">
+                                            <span class="text-polleria-600 dark:text-polleria-400 font-medium text-sm">
+                                                {{ strtoupper(substr($empleado->nombreEmpleado, 0, 1) . substr($empleado->apellidoEmpleado, 0, 1)) }}
                                             </span>
                                         </div>
-                                    @endif --}}
+                                    @endif
                                     <div>
                                         <p class="font-medium text-gray-900 dark:text-white">{{ $empleado->nombreEmpleado }} {{ $empleado->apellidoEmpleado }}</p>
                                         <p class="text-xs text-gray-500">{{ $empleado->emailEmpleado }}</p>

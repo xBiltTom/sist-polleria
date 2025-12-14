@@ -19,6 +19,7 @@ class Empleado extends Model
         'estadoDB',
         'idTipoEmpleado',
         'urlFotoEmpleado',
+        'idFotoEmpleado',
         'idEstadoEmpleado'
     ];
 

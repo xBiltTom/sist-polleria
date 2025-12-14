@@ -5,19 +5,20 @@ namespace App\Livewire\Productos;
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
 use App\Traits\WithSweetAlert;
+use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class Create extends Component
 {
-    use WithFileUploads, WithSweetAlert;
+    use WithFileUploads, WithSweetAlert, WithCloudinaryUpload;
 
     public string $nombreProducto = '';
     public string $descripcionProducto = '';
     public int $stockProducto = 0;
     public string $precioUnitario = '0.00';
     public ?int $idCategoriaProducto = null;
-    public $urlImagenProducto;
+    public $imagenProducto; // Archivo temporal de Livewire
 
     protected $listeners = ['save'];
 
@@ -29,7 +30,7 @@ class Create extends Component
             'stockProducto' => 'required|integer|min:0',
             'precioUnitario' => 'required|numeric|min:0|max:9999.99',
             'idCategoriaProducto' => 'required|exists:categoria_producto,idCategoriaProducto',
-            'urlImagenProducto' => 'nullable|image|max:2048'
+            'imagenProducto' => 'nullable|image|max:2048'
         ];
     }
 
@@ -47,8 +48,8 @@ class Create extends Component
             'precioUnitario.max' => 'El precio no puede exceder 9999.99.',
             'idCategoriaProducto.required' => 'Debe seleccionar una categoría.',
             'idCategoriaProducto.exists' => 'La categoría seleccionada no es válida.',
-            'urlImagenProducto.image' => 'El archivo debe ser una imagen.',
-            'urlImagenProducto.max' => 'La imagen no puede exceder 2MB.',
+            'imagenProducto.image' => 'El archivo debe ser una imagen.',
+            'imagenProducto.max' => 'La imagen no puede exceder 2MB.',
         ];
     }
 
@@ -67,9 +68,15 @@ class Create extends Component
         try {
             $validated = $this->validate();
 
-            if ($this->urlImagenProducto) {
-                $validated['urlImagenProducto'] = $this->urlImagenProducto->store('productos', 'public');
+            // Procesar subida de imagen a Cloudinary
+            if ($this->imagenProducto) {
+                $cloudinaryData = $this->uploadToCloudinary($this->imagenProducto, 'productos');
+                $validated['urlImagenProducto'] = $cloudinaryData['url'];
+                $validated['idImagenProducto'] = $cloudinaryData['public_id'];
             }
+
+            // Eliminar el campo del archivo temporal antes de guardar
+            unset($validated['imagenProducto']);
 
             $validated['estadoDB'] = true;
 
@@ -90,6 +97,14 @@ class Create extends Component
                 text: 'No se pudo registrar el producto. Inténtelo nuevamente.'
             );
         }
+    }
+
+    /**
+     * Obtiene la URL de previsualización de la imagen
+     */
+    public function getImagenPreviewProperty(): ?string
+    {
+        return $this->getPreviewUrl($this->imagenProducto);
     }
 
     public function render()

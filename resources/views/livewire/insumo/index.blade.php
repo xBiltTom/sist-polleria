@@ -54,10 +54,10 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3">
                                 @if($insumo->imagenInsumo)
-                                    <img src="{{ asset('storage/' . $insumo->imagenInsumo) }}" alt="{{ $insumo->nombreInsumo }}" class="w-12 h-12 object-cover rounded">
+                                    <img src="{{ $insumo->imagenInsumo }}" alt="{{ $insumo->nombreInsumo }}" class="w-12 h-12 object-cover rounded-lg ring-2 ring-gray-200 dark:ring-gray-700">
                                 @else
-                                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
-                                        <span class="text-gray-400 text-xs">Sin img</span>
+                                    <div class="w-12 h-12 bg-polleria-100 dark:bg-polleria-900 rounded-lg flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700">
+                                        <span class="text-polleria-600 dark:text-polleria-400 font-medium text-xs">Sin img</span>
                                     </div>
                                 @endif
                             </td>

@@ -65,23 +65,15 @@
 
                 {{-- Imagen --}}
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Imagen del insumo
-                    </label>
-                    <input
-                        type="file"
-                        wire:model="imagenInsumo"
-                        accept="image/*"
-                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    >
-                    @if($imagenInsumo)
-                        <div class="mt-2">
-                            <img src="{{ $imagenInsumo->temporaryUrl() }}" class="w-32 h-32 object-cover rounded" alt="Preview">
-                        </div>
-                    @endif
-                    @error('imagenInsumo')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
+                    <x-image-upload
+                        wire:model="fotoInsumo"
+                        label="Imagen del insumo"
+                        :preview="$this->imagenPreview"
+                        :is-uploading="$isUploading"
+                        preview-type="card"
+                        hint="PNG, JPG o WEBP hasta 2MB"
+                        :error="$errors->first('fotoInsumo')"
+                    />
                 </div>
             </div>
 

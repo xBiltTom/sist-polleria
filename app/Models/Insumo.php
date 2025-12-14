@@ -14,7 +14,8 @@ class Insumo extends Model
         'nombreInsumo',
         'descripcionInsumo',
         'precioUnitarioInsumo',
-        'imagenInsumo'
+        'imagenInsumo',
+        'idImagenInsumo'
     ];
 
     protected $casts = [

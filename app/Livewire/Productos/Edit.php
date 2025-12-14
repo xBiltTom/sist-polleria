@@ -5,12 +5,14 @@ namespace App\Livewire\Productos;
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
 use App\Traits\WithSweetAlert;
+use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Log;
 
 class Edit extends Component
 {
-    use WithFileUploads, WithSweetAlert;
+    use WithFileUploads, WithSweetAlert, WithCloudinaryUpload;
 
     public Producto $producto;
 
@@ -19,7 +21,7 @@ class Edit extends Component
     public int $stockProducto = 0;
     public string $precioUnitario = '0.00';
     public ?int $idCategoriaProducto = null;
-    public $urlImagenProducto;
+    public $imagenProducto; // Archivo temporal de Livewire
     public bool $estadoDB = true;
 
     protected $listeners = ['save'];
@@ -45,7 +47,7 @@ class Edit extends Component
             'stockProducto' => 'required|integer|min:0',
             'precioUnitario' => 'required|numeric|min:0|max:9999.99',
             'idCategoriaProducto' => 'required|exists:categoria_producto,idCategoriaProducto',
-            'urlImagenProducto' => 'nullable|image|max:2048',
+            'imagenProducto' => 'nullable|image|max:2048',
             'estadoDB' => 'boolean'
         ];
     }
@@ -64,8 +66,8 @@ class Edit extends Component
             'precioUnitario.max' => 'El precio no puede exceder 9999.99.',
             'idCategoriaProducto.required' => 'Debe seleccionar una categoría.',
             'idCategoriaProducto.exists' => 'La categoría seleccionada no es válida.',
-            'urlImagenProducto.image' => 'El archivo debe ser una imagen.',
-            'urlImagenProducto.max' => 'La imagen no puede exceder 2MB.',
+            'imagenProducto.image' => 'El archivo debe ser una imagen.',
+            'imagenProducto.max' => 'La imagen no puede exceder 2MB.',
         ];
     }
 
@@ -84,9 +86,29 @@ class Edit extends Component
         try {
             $validated = $this->validate();
 
-            if ($this->urlImagenProducto) {
-                $validated['urlImagenProducto'] = $this->urlImagenProducto->store('productos', 'public');
+            // Procesar subida de imagen a Cloudinary
+            if ($this->imagenProducto) {
+                try {
+                    $cloudinaryData = $this->uploadToCloudinary($this->imagenProducto, 'productos');
+                    $validated['urlImagenProducto'] = $cloudinaryData['url'];
+                    $validated['idImagenProducto'] = $cloudinaryData['public_id'];
+
+                    // Eliminar imagen anterior de Cloudinary
+                    if ($this->producto->idImagenProducto) {
+                        $this->deleteFromCloudinary($this->producto->idImagenProducto);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error al subir imagen a Cloudinary: ' . $e->getMessage());
+                    $this->errorAlert(
+                        title: 'Error',
+                        text: 'No se pudo subir la imagen. Verifique su conexión o intente con otra imagen.'
+                    );
+                    return;
+                }
             }
+
+            // Eliminar el campo del archivo temporal antes de guardar
+            unset($validated['imagenProducto']);
 
             $this->producto->update($validated);
 
@@ -100,11 +122,28 @@ class Edit extends Component
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
+            Log::error('Error al actualizar producto: ' . $e->getMessage());
             $this->errorAlert(
                 title: 'Error',
-                text: 'No se pudo actualizar el producto. Inténtelo nuevamente.'
+                text: 'No se pudo actualizar el producto. ' . $e->getMessage()
             );
         }
+    }
+
+    /**
+     * Obtiene la URL de previsualización de la imagen (temporal)
+     */
+    public function getImagenPreviewProperty(): ?string
+    {
+        return $this->getPreviewUrl($this->imagenProducto);
+    }
+
+    /**
+     * Obtiene la URL de la imagen existente en Cloudinary
+     */
+    public function getExistingImageProperty(): ?string
+    {
+        return $this->producto->urlImagenProducto;
     }
 
     public function render()

@@ -123,9 +123,17 @@ new class extends Component
                     class="flex items-center space-x-3 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-polleria-dark-800 transition-colors"
                 >
                     <!-- User Avatar -->
-                    <div class="w-8 h-8 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-white dark:ring-polleria-dark-800">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                    </div>
+                    @if(auth()->user()->empleado?->urlFotoEmpleado)
+                        <img
+                            src="{{ auth()->user()->empleado->urlFotoEmpleado }}"
+                            alt="{{ auth()->user()->name }}"
+                            class="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-polleria-dark-800"
+                        >
+                    @else
+                        <div class="w-8 h-8 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-white dark:ring-polleria-dark-800">
+                            {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                        </div>
+                    @endif
                     <div class="hidden md:block text-left">
                         <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
                             {{ auth()->user()->name ?? 'Usuario' }}
@@ -149,8 +157,23 @@ new class extends Component
                     class="absolute right-0 mt-2 w-56 bg-white dark:bg-polleria-dark-800 rounded-xl shadow-lg border border-gray-200 dark:border-polleria-dark-700 overflow-hidden"
                 >
                     <div class="px-4 py-3 border-b border-gray-200 dark:border-polleria-dark-700">
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ auth()->user()->name ?? 'Usuario' }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ auth()->user()->email ?? '' }}</p>
+                        <div class="flex items-center gap-3 mb-2">
+                            @if(auth()->user()->empleado?->urlFotoEmpleado)
+                                <img
+                                    src="{{ auth()->user()->empleado->urlFotoEmpleado }}"
+                                    alt="{{ auth()->user()->name }}"
+                                    class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+                                >
+                            @else
+                                <div class="w-10 h-10 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-gray-200 dark:ring-gray-700">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ auth()->user()->name ?? 'Usuario' }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ auth()->user()->email ?? '' }}</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="py-1">

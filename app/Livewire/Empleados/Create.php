@@ -6,12 +6,13 @@ use App\Models\Empleado;
 use App\Models\TipoEmpleado;
 use App\Models\EstadoEmpleado;
 use App\Traits\WithSweetAlert;
+use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class Create extends Component
 {
-    use WithFileUploads, WithSweetAlert;
+    use WithFileUploads, WithSweetAlert, WithCloudinaryUpload;
 
     public string $nombreEmpleado = '';
     public string $apellidoEmpleado = '';
@@ -20,7 +21,7 @@ class Create extends Component
     public string $emailEmpleado = '';
     public ?int $idTipoEmpleado = null;
     public ?int $idEstadoEmpleado = null;
-    public $urlFotoEmpleado;
+    public $fotoEmpleado; // Archivo temporal de Livewire
 
     protected $listeners = ['save'];
 
@@ -34,7 +35,7 @@ class Create extends Component
             'emailEmpleado' => 'nullable|email|max:100',
             'idTipoEmpleado' => 'required|exists:tipo_empleado,idTipoEmpleado',
             'idEstadoEmpleado' => 'required|exists:estado_empleado,idEstadoEmpleado',
-            'urlFotoEmpleado' => 'nullable|image|max:2048'
+            'fotoEmpleado' => 'nullable|image|max:2048'
         ];
     }
 
@@ -63,9 +64,15 @@ class Create extends Component
         try {
             $validated = $this->validate();
 
-            if ($this->urlFotoEmpleado) {
-                $validated['urlFotoEmpleado'] = $this->urlFotoEmpleado->store('empleados', 'public');
+            // Procesar subida de imagen a Cloudinary
+            if ($this->fotoEmpleado) {
+                $cloudinaryData = $this->uploadToCloudinary($this->fotoEmpleado, 'empleados');
+                $validated['urlFotoEmpleado'] = $cloudinaryData['url'];
+                $validated['idFotoEmpleado'] = $cloudinaryData['public_id'];
             }
+
+            // Eliminar el campo del archivo temporal antes de guardar
+            unset($validated['fotoEmpleado']);
 
             Empleado::create($validated);
 
@@ -84,6 +91,14 @@ class Create extends Component
                 text: 'No se pudo registrar el empleado. Inténtelo nuevamente.'
             );
         }
+    }
+
+    /**
+     * Obtiene la URL de previsualización de la foto
+     */
+    public function getFotoPreviewProperty(): ?string
+    {
+        return $this->getPreviewUrl($this->fotoEmpleado);
     }
 
     public function render()
