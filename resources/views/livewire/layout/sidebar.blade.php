@@ -107,13 +107,13 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Usuarios',
-                        'route' => 'dashboard', // Cambiar por la ruta real
-                        'icon' => 'cog-6-tooth',
+                        'route' => 'usuarios.index',
+                        'icon' => 'users',
                         'permission' => 'ver-usuarios',
                     ],
                     [
                         'name' => 'Roles y Permisos',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'roles.index',
                         'icon' => 'shield-check',
                         'permission' => 'ver-roles',
                     ],
@@ -226,11 +226,12 @@ new class extends Component
         }
 
         // Integración con spatie/laravel-permission
-        // Descomentar cuando esté configurado:
-        // return auth()->user()->can($permission);
+        // Si el usuario tiene el rol super-admin, tiene acceso a todo
+        if (auth()->user()->hasRole('super-admin')) {
+            return true;
+        }
 
-        // Por ahora, mostrar todos los items
-        return true;
+        return auth()->user()->can($permission);
     }
 }; ?>
 

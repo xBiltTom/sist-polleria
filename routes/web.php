@@ -40,6 +40,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     require __DIR__.'/estado-preparacion.php';
     require __DIR__.'/tipo-empleado.php';
     require __DIR__.'/estado-empleado.php';
+    require __DIR__.'/roles.php';
+    require __DIR__.'/usuarios.php';
 
    /*  require __DIR__.'/dashboard/pedidos.php';
     require __DIR__.'/dashboard/inventario.php';
