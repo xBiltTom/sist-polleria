@@ -23,7 +23,7 @@ class Mesa extends Model
     ];
 
     public function estadoMesa(){
-        return $this->belongsTo(EstadoMesa::class,"idMesa");
+        return $this->belongsTo(EstadoMesa::class,'idEstadoMesa', 'idEstadoMesa');
     }
 
     public function pedidos(){

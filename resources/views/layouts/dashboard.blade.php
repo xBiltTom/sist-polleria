@@ -67,5 +67,7 @@
 
         {{-- SweetAlert Flash Messages --}}
         <x-swal-flash />
+        
+        @livewireScripts
     </body>
 </html>

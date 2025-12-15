@@ -26,8 +26,8 @@ new class extends Component
                 'group' => 'Ventas',
                 'items' => [
                     [
-                        'name' => 'Pedidos',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'name' => 'Pedidos en Salón',
+                        'route' => 'pedidos.salon.index',
                         'icon' => 'clipboard-list',
                         'permission' => 'ver-pedidos',
                     ],
