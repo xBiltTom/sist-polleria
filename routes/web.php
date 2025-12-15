@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     require __DIR__.'/estados-mesa.php';
     require __DIR__.'/tipos-pago-pedido.php';
     require __DIR__.'/estados-pedido.php';
+    require __DIR__.'/pedidos.php';
 
     require __DIR__.'/estado-proveedor.php';
     require __DIR__.'/contacto-proveedor.php';
