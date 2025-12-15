@@ -20,49 +20,95 @@
         <div class="mb-8">
             <div class="flex items-center justify-center">
                 <div class="flex items-center space-x-4">
-                    <!-- Step 1 -->
+                    <!-- Step 1: Modalidad -->
                     <div class="flex items-center">
                         <div @class([
-                            'flex items-center justify-center w-10 h-10 rounded-full font-semibold',
-                            'bg-primary-600 text-white' => $step >= 1,
-                            'bg-gray-300 text-gray-600' => $step < 1,
+                            'flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all duration-300',
+                            'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-110' => $step === 1,
+                            'bg-blue-500 text-white' => $step > 1,
+                            'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' => $step < 1,
                         ])>
-                            1
+                            @if($step > 1)
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            @else
+                                1
+                            @endif
                         </div>
-                        <span class="ml-2 text-sm font-medium {{ $step >= 1 ? 'text-gray-900 dark:text-white' : 'text-gray-500' }}">
+                        <span @class([
+                            'ml-3 text-sm font-semibold transition-colors',
+                            'text-blue-600 dark:text-blue-400' => $step === 1,
+                            'text-gray-700 dark:text-gray-300' => $step > 1,
+                            'text-gray-400 dark:text-gray-600' => $step < 1,
+                        ])>
                             Modalidad
                         </span>
                     </div>
 
-                    <div class="w-16 h-1 {{ $step >= 2 ? 'bg-primary-600' : 'bg-gray-300' }}"></div>
+                    <!-- Línea conectora 1-2 -->
+                    <div @class([
+                        'w-20 h-1.5 rounded transition-all duration-300',
+                        'bg-gradient-to-r from-blue-500 to-blue-600' => $step >= 2,
+                        'bg-gray-200 dark:bg-gray-700' => $step < 2,
+                    ])></div>
 
-                    <!-- Step 2 -->
+                    <!-- Step 2: Cliente(s) -->
                     <div class="flex items-center">
                         <div @class([
-                            'flex items-center justify-center w-10 h-10 rounded-full font-semibold',
-                            'bg-primary-600 text-white' => $step >= 2,
-                            'bg-gray-300 text-gray-600' => $step < 2,
+                            'flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all duration-300',
+                            'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg scale-110' => $step === 2,
+                            'bg-green-500 text-white' => $step > 2,
+                            'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' => $step < 2,
                         ])>
-                            2
+                            @if($step > 2)
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            @else
+                                2
+                            @endif
                         </div>
-                        <span class="ml-2 text-sm font-medium {{ $step >= 2 ? 'text-gray-900 dark:text-white' : 'text-gray-500' }}">
+                        <span @class([
+                            'ml-3 text-sm font-semibold transition-colors',
+                            'text-green-600 dark:text-green-400' => $step === 2,
+                            'text-gray-700 dark:text-gray-300' => $step > 2,
+                            'text-gray-400 dark:text-gray-600' => $step < 2,
+                        ])>
                             Cliente(s)
                         </span>
                     </div>
 
                     @if($modalidadPago === 'total')
-                        <div class="w-16 h-1 {{ $step >= 3 ? 'bg-primary-600' : 'bg-gray-300' }}"></div>
+                        <!-- Línea conectora 2-3 -->
+                        <div @class([
+                            'w-20 h-1.5 rounded transition-all duration-300',
+                            'bg-gradient-to-r from-green-500 to-purple-600' => $step >= 3,
+                            'bg-gray-200 dark:bg-gray-700' => $step < 3,
+                        ])></div>
 
-                        <!-- Step 3 -->
+                        <!-- Step 3: Productos -->
                         <div class="flex items-center">
                             <div @class([
-                                'flex items-center justify-center w-10 h-10 rounded-full font-semibold',
-                                'bg-primary-600 text-white' => $step >= 3,
-                                'bg-gray-300 text-gray-600' => $step < 3,
+                                'flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all duration-300',
+                                'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110' => $step === 3,
+                                'bg-purple-500 text-white' => $step > 3,
+                                'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' => $step < 3,
                             ])>
-                                3
+                                @if($step > 3)
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                @else
+                                    3
+                                @endif
                             </div>
-                            <span class="ml-2 text-sm font-medium {{ $step >= 3 ? 'text-gray-900 dark:text-white' : 'text-gray-500' }}">
+                            <span @class([
+                                'ml-3 text-sm font-semibold transition-colors',
+                                'text-purple-600 dark:text-purple-400' => $step === 3,
+                                'text-gray-700 dark:text-gray-300' => $step > 3,
+                                'text-gray-400 dark:text-gray-600' => $step < 3,
+                            ])>
                                 Productos
                             </span>
                         </div>
@@ -80,25 +126,40 @@
                         Selecciona la Modalidad de Pago
                     </h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Pago Total -->
-                        <label class="cursor-pointer">
-                            <input 
-                                type="radio" 
-                                wire:model.live="modalidadPago" 
-                                value="total" 
+                        <label class="cursor-pointer group">
+                            <input
+                                type="radio"
+                                wire:model.live="modalidadPago"
+                                value="total"
                                 class="sr-only peer"
                             >
-                            <div class="p-6 border-2 rounded-lg transition-all peer-checked:border-primary-600 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/20 hover:shadow-md border-gray-300 dark:border-gray-600">
+                            <div class="relative p-6 border-2 rounded-xl transition-all duration-300 transform
+                                        border-gray-300 dark:border-gray-600
+                                        peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 peer-checked:shadow-xl peer-checked:scale-105
+                                        hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 dark:hover:border-blue-500
+                                        group-active:scale-100">
+                                <!-- Indicador de selección -->
+                                <div class="absolute top-3 right-3 opacity-0 peer-checked:opacity-100 transition-opacity duration-300">
+                                    <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+
                                 <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0">
-                                        <svg class="w-8 h-8 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex-shrink-0 p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg group-hover:bg-blue-200 dark:group-hover:bg-blue-800/60 transition-colors">
+                                        <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                         </svg>
                                     </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-1">Pago Total</h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-lg text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                            Pago Total
+                                        </h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                                             Un solo cliente paga la cuenta completa. Se seleccionan los productos inmediatamente.
                                         </p>
                                     </div>
@@ -107,23 +168,38 @@
                         </label>
 
                         <!-- Pago Dividido -->
-                        <label class="cursor-pointer">
-                            <input 
-                                type="radio" 
-                                wire:model.live="modalidadPago" 
-                                value="dividida" 
+                        <label class="cursor-pointer group">
+                            <input
+                                type="radio"
+                                wire:model.live="modalidadPago"
+                                value="dividida"
                                 class="sr-only peer"
                             >
-                            <div class="p-6 border-2 rounded-lg transition-all peer-checked:border-primary-600 peer-checked:bg-primary-50 dark:peer-checked:bg-primary-900/20 hover:shadow-md border-gray-300 dark:border-gray-600">
+                            <div class="relative p-6 border-2 rounded-xl transition-all duration-300 transform
+                                        border-gray-300 dark:border-gray-600
+                                        peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 peer-checked:shadow-xl peer-checked:scale-105
+                                        hover:shadow-lg hover:-translate-y-1 hover:border-green-400 dark:hover:border-green-500
+                                        group-active:scale-100">
+                                <!-- Indicador de selección -->
+                                <div class="absolute top-3 right-3 opacity-0 peer-checked:opacity-100 transition-opacity duration-300">
+                                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+
                                 <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0">
-                                        <svg class="w-8 h-8 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex-shrink-0 p-3 bg-green-100 dark:bg-green-900/40 rounded-lg group-hover:bg-green-200 dark:group-hover:bg-green-800/60 transition-colors">
+                                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
                                         </svg>
                                     </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-1">Pago Dividido</h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-lg text-gray-900 dark:text-white mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                                            Pago Dividido
+                                        </h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                                             Varios clientes registrados. Los productos se agregan después individualmente.
                                         </p>
                                     </div>
@@ -146,15 +222,15 @@
                         Datos del Cliente
                     </h3>
 
-                    <form wire:submit.prevent="siguienteStep" class="space-y-4">
+                    <form wire:submit.prevent="submitCliente" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Nombre -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Nombre <span class="text-red-500">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     wire:model="nombreCliente"
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white @error('nombreCliente') border-red-500 @enderror"
                                     placeholder="Ingrese sus Nombres"
@@ -169,8 +245,8 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Apellido <span class="text-red-500">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     wire:model="apellidoCliente"
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white @error('apellidoCliente') border-red-500 @enderror"
                                     placeholder="Ingrese sus Apellidos"
@@ -188,18 +264,18 @@
                             </label>
                             <div class="flex gap-4">
                                 <label class="flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        wire:model.live="tipoPersona" 
+                                    <input
+                                        type="radio"
+                                        wire:model.live="tipoPersona"
                                         value="natural"
                                         class="mr-2"
                                     >
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Natural (DNI)</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input 
-                                        type="radio" 
-                                        wire:model.live="tipoPersona" 
+                                    <input
+                                        type="radio"
+                                        wire:model.live="tipoPersona"
                                         value="juridica"
                                         class="mr-2"
                                     >
@@ -213,8 +289,8 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 {{ $tipoPersona === 'natural' ? 'DNI' : 'RUC' }} <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 wire:model="documento"
                                 maxlength="{{ $tipoPersona === 'natural' ? '8' : '11' }}"
                                 class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white @error('documento') border-red-500 @enderror"
@@ -231,8 +307,8 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Razón Social <span class="text-red-500">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     wire:model="razonSocial"
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white @error('razonSocial') border-red-500 @enderror"
                                     placeholder="Empresa S.A.C."
@@ -249,8 +325,8 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Celular (Opcional)
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     wire:model="celular"
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     placeholder="999888777"
@@ -262,8 +338,8 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Dirección (Opcional)
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     wire:model="direccion"
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     placeholder="Av. Principal 123"
@@ -289,7 +365,7 @@
                                                 </p>
                                             </div>
                                             @if($modalidadPago === 'dividida')
-                                                <button 
+                                                <button
                                                     type="button"
                                                     wire:click="eliminarCliente({{ $index }})"
                                                     class="text-red-600 hover:text-red-800"
@@ -307,16 +383,35 @@
                             <x-btn variant="secondary" type="button" wire:click="anteriorStep">
                                 ← Atrás
                             </x-btn>
-                            
+
                             <div class="flex gap-2">
-                                @if($modalidadPago === 'dividida' && !empty($clientes))
-                                    <x-btn variant="secondary" type="button" wire:click="agregarCliente">
-                                        + Agregar Otro Cliente
+                                @if($modalidadPago === 'dividida')
+                                    <!-- Siempre mostrar botón de agregar -->
+                                    <x-btn variant="secondary" type="submit">
+                                        @if(empty($clientes))
+                                            Agregar Primer Cliente
+                                        @else
+                                            + Agregar Otro Cliente
+                                        @endif
+                                    </x-btn>
+
+                                    @if(!empty($clientes))
+                                        <button
+                                            type="button"
+                                            wire:click="siguienteStep"
+                                            @disabled(count($clientes) < 2)
+                                            class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium transition-colors
+                                                @if(count($clientes) < 2) opacity-50 cursor-not-allowed @else hover:bg-orange-700 @endif"
+                                        >
+                                            Continuar a Productos →
+                                        </button>
+                                    @endif
+                                @else
+                                    <!-- Modalidad total: un solo cliente -->
+                                    <x-btn type="submit">
+                                        Continuar →
                                     </x-btn>
                                 @endif
-                                <x-btn type="submit">
-                                    {{ $modalidadPago === 'dividida' && !empty($clientes) ? 'Finalizar' : 'Continuar →' }}
-                                </x-btn>
                             </div>
                         </div>
                     </form>
@@ -337,13 +432,81 @@
                         </div>
                     @endif
 
+                    <!-- Selector de Cliente Activo en Modalidad Dividida -->
+                    @if($modalidadPago === 'dividida')
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center gap-2">
+                                <x-sidebar-icon icon="clipboard-list" class="w-4 h-4" />
+                                Selecciona el cliente para agregar productos:
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($clientes as $index => $cliente)
+                                    <button
+                                        type="button"
+                                        wire:click="seleccionarClienteActivo({{ $index }})"
+                                        @class([
+                                            'p-3 rounded-lg border-2 transition-all text-left',
+                                            'border-blue-600 bg-blue-100 dark:bg-blue-900 shadow-lg' => $clienteActivoIndex === $index,
+                                            'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-400' => $clienteActivoIndex !== $index,
+                                        ])
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-shrink-0">
+                                                @if($clienteActivoIndex === $index)
+                                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                @else
+                                                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1">
+                                                <p @class([
+                                                    'font-semibold text-sm',
+                                                    'text-blue-900 dark:text-blue-100' => $clienteActivoIndex === $index,
+                                                    'text-gray-900 dark:text-white' => $clienteActivoIndex !== $index,
+                                                ])>
+                                                    {{ $cliente['nombre'] }} {{ $cliente['apellido'] }}
+                                                </p>
+                                                <p @class([
+                                                    'text-xs',
+                                                    'text-blue-700 dark:text-blue-300' => $clienteActivoIndex === $index,
+                                                    'text-gray-500 dark:text-gray-400' => $clienteActivoIndex !== $index,
+                                                ])>
+                                                    {{ $cliente['tipoPersona'] === 'natural' ? 'DNI' : 'RUC' }}: {{ $cliente['dni'] ?? $cliente['ruc'] }}
+                                                </p>
+                                                @if(isset($productosPorCliente[$index]) && count($productosPorCliente[$index]) > 0)
+                                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                                                        ✓ {{ count($productosPorCliente[$index]) }} producto(s)
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                            @if($clienteActivoIndex === null)
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mt-3 text-center">
+                                    👆 Selecciona un cliente para comenzar a agregar productos
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                             Seleccionar Productos
+                            @if($modalidadPago === 'dividida' && $clienteActivoIndex !== null)
+                                <span class="text-sm font-normal text-blue-600">
+                                    (para {{ $clientes[$clienteActivoIndex]['nombre'] }})
+                                </span>
+                            @endif
                         </h3>
                         <!-- Buscador -->
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             wire:model.live.debounce.300ms="busqueda"
                             class="w-64 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             placeholder="Buscar productos..."
@@ -357,8 +520,8 @@
                                 @forelse($productos as $producto)
                                     <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow">
                                         @if($producto->urlImagenProducto)
-                                            <img 
-                                                src="{{ Storage::url($producto->urlImagenProducto) }}" 
+                                            <img
+                                                src="{{ Storage::url($producto->urlImagenProducto) }}"
                                                 alt="{{ $producto->nombreProducto }}"
                                                 class="w-full h-32 object-cover rounded-lg mb-3"
                                             >
@@ -371,7 +534,7 @@
                                         <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
                                             {{ $producto->nombreProducto }}
                                         </h4>
-                                        
+
                                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                             {{ Str::limit($producto->descripcionProducto, 50) }}
                                         </p>
@@ -387,29 +550,29 @@
 
                                         <!-- Controles de Cantidad -->
                                         <div class="flex items-center gap-2">
-                                            <button 
+                                            <button
                                                 type="button"
                                                 wire:click="decrementarCantidad({{ $producto->idProducto }})"
                                                 class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center"
                                             >
                                                 -
                                             </button>
-                                            <input 
-                                                type="number" 
+                                            <input
+                                                type="number"
                                                 wire:model.live="cantidades.{{ $producto->idProducto }}"
                                                 class="w-16 text-center rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 min="0"
                                                 max="{{ $producto->stockProducto }}"
                                                 value="{{ $cantidades[$producto->idProducto] ?? 0 }}"
                                             >
-                                            <button 
+                                            <button
                                                 type="button"
                                                 wire:click="incrementarCantidad({{ $producto->idProducto }})"
                                                 class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center"
                                             >
                                                 +
                                             </button>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 wire:click="agregarProducto({{ $producto->idProducto }})"
                                                 class="flex-1 px-3 py-1 bg-orange-600 text-white rounded hover:bg-primary-700 text-sm font-medium"
@@ -434,57 +597,105 @@
                                     Resumen del Pedido
                                 </h4>
 
-                                @if(!empty($productosSeleccionados))
-                                    <div class="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                                        @foreach($productosSeleccionados as $idProducto => $item)
-                                            <div class="flex items-start justify-between p-2 bg-white dark:bg-gray-800 rounded">
-                                                <div class="flex-1">
-                                                    <p class="text-sm font-medium text-gray-900 dark:text-white">
-                                                        {{ $item['producto']->nombreProducto }}
+                                @if($modalidadPago === 'dividida')
+                                    <!-- Resumen por Cliente en Modalidad Dividida -->
+                                    <div class="space-y-4 mb-4 max-h-96 overflow-y-auto">
+                                        @foreach($clientes as $index => $cliente)
+                                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                                    {{ $cliente['nombre'] }} {{ $cliente['apellido'] }}
+                                                </p>
+
+                                                @if(isset($productosPorCliente[$index]) && count($productosPorCliente[$index]) > 0)
+                                                    <div class="space-y-2">
+                                                        @foreach($productosPorCliente[$index] as $idProducto => $prod)
+                                                            <div class="flex items-start justify-between text-xs bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                                                <div class="flex-1">
+                                                                    <p class="font-medium text-gray-900 dark:text-white">
+                                                                        {{ $prod['producto']->nombreProducto }}
+                                                                    </p>
+                                                                    <p class="text-gray-500">
+                                                                        {{ $prod['cantidad'] }} x S/ {{ number_format($prod['precio'], 2) }}
+                                                                    </p>
+                                                                    <p class="font-semibold text-primary-600">
+                                                                        S/ {{ number_format($prod['subtotal'], 2) }}
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    wire:click="eliminarProductoSeleccionado({{ $idProducto }}, {{ $index }})"
+                                                                    class="text-red-600 hover:text-red-800"
+                                                                >
+                                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endforeach
+                                                        <p class="text-xs font-semibold text-right text-gray-700 dark:text-gray-300 pt-1 border-t dark:border-gray-600">
+                                                            Subtotal: S/ {{ number_format(collect($productosPorCliente[$index])->sum('subtotal'), 2) }}
+                                                        </p>
+                                                    </div>
+                                                @else
+                                                    <p class="text-xs text-gray-500 italic">
+                                                        Sin productos asignados
                                                     </p>
-                                                    <p class="text-xs text-gray-500">
-                                                        {{ $item['cantidad'] }} x S/ {{ number_format($item['precio'], 2) }}
-                                                    </p>
-                                                    <p class="text-sm font-semibold text-primary-600">
-                                                        S/ {{ number_format($item['subtotal'], 2) }}
-                                                    </p>
-                                                </div>
-                                                <button 
-                                                    wire:click="eliminarProductoSeleccionado({{ $idProducto }})"
-                                                    class="text-red-600 hover:text-red-800"
-                                                >
-                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                                    </svg>
-                                                </button>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
-
-                                    <div class="border-t border-gray-300 dark:border-gray-600 pt-4 space-y-2">
-                                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                                            <span>Total Items:</span>
-                                            <span>{{ $this->totalItems }}</span>
+                                @else
+                                    <!-- Resumen en Modalidad Total -->
+                                    @if(!empty($productosSeleccionados))
+                                        <div class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                                            @foreach($productosSeleccionados as $idProducto => $item)
+                                                <div class="flex items-start justify-between p-2 bg-white dark:bg-gray-800 rounded">
+                                                    <div class="flex-1">
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                            {{ $item['producto']->nombreProducto }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            {{ $item['cantidad'] }} x S/ {{ number_format($item['precio'], 2) }}
+                                                        </p>
+                                                        <p class="text-sm font-semibold text-primary-600">
+                                                            S/ {{ number_format($item['subtotal'], 2) }}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        wire:click="eliminarProductoSeleccionado({{ $idProducto }})"
+                                                        class="text-red-600 hover:text-red-800"
+                                                    >
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            @endforeach
                                         </div>
+                                    @else
+                                        <p class="text-sm text-gray-500 text-center py-8">
+                                            No hay productos seleccionados
+                                        </p>
+                                    @endif
+                                @endif
+
+                                <!-- Total General -->
+                                @if(($modalidadPago === 'total' && !empty($productosSeleccionados)) || ($modalidadPago === 'dividida' && !empty(array_filter($productosPorCliente))))
+                                    <div class="border-t border-gray-300 dark:border-gray-600 pt-4 space-y-2">
                                         <div class="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
                                             <span>Total:</span>
                                             <span>S/ {{ number_format($this->montoTotal, 2) }}</span>
                                         </div>
                                     </div>
 
-                                    <button 
+                                    <button
                                         wire:click="registrarPedido"
                                         class="w-full mt-4 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-primary-700 font-semibold"
                                     >
-                                        Registrar Pedido
+                                        {{ $modalidadPago === 'dividida' ? 'Finalizar Pedido' : 'Registrar Pedido' }}
                                     </button>
-                                @else
-                                    <p class="text-sm text-gray-500 text-center py-8">
-                                        No hay productos seleccionados
-                                    </p>
                                 @endif
 
-                                <button 
+                                <button
                                     wire:click="anteriorStep"
                                     class="w-full mt-2 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500"
                                 >
