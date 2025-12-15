@@ -23,12 +23,47 @@ new class extends Component
                 ],
             ],
             [
-                'group' => 'Ventas',
+                'group' => 'Pedidos',
                 'items' => [
+                    [
+                        'name' => 'Historial de Pedidos',
+                        'route' => 'pedidos.historial',
+                        'icon' => 'chart-bar',
+                        'permission' => 'ver-pedidos',
+                    ],
                     [
                         'name' => 'Pedidos en Salón',
                         'route' => 'pedidos.salon.index',
                         'icon' => 'clipboard-list',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Pedidos Delivery',
+                        'route' => 'pedidos.delivery.index',
+                        'icon' => 'truck',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Pedidos Para Llevar',
+                        'route' => 'pedidos.para-llevar.index',
+                        'icon' => 'shopping-bag',
+                        'permission' => 'ver-pedidos',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Operaciones',
+                'items' => [
+                    [
+                        'name' => 'Vista de Cocina',
+                        'route' => 'cocina.index',
+                        'icon' => 'fire',
+                        'permission' => 'ver-cocina',
+                    ],
+                    [
+                        'name' => 'Vista de Mozo',
+                        'route' => 'mozo.index',
+                        'icon' => 'user-circle',
                         'permission' => 'ver-pedidos',
                     ],
                     [

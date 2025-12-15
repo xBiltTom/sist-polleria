@@ -68,9 +68,11 @@ class Create extends Component
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
+            \Log::error('Error al crear mesa: ' . $e->getMessage());
+            \Log::error('Datos: ' . json_encode($this->all()));
             $this->errorAlert(
                 title: 'Error',
-                text: 'No se pudo registrar la mesa. Inténtelo nuevamente.'
+                text: 'No se pudo registrar la mesa. ' . $e->getMessage()
             );
         }
     }
