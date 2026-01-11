@@ -17,28 +17,30 @@ class Index extends Component
     public $pedidoPrevisualizar = null;
     public $mostrarModal = false;
 
-    protected $listeners = ['cambiarEstado', 'confirmarCancelacion'];
+    protected $listeners = ['cambiarEstado', 'confirmarCancelacion', 'entregarParaLlevar'];
 
     public function render()
     {
+        $empleadoId = auth()->user()->empleado?->idEmpleado ?? auth()->id();
+
         // Pedidos pendientes (estado 1) - Recién creados, esperando enviarse a cocina
-        $pedidosPendientes = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
+        $pedidosPendientes = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido'])
             ->where('idEstadoPedido', 1) // Pendiente
-            ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
+            ->where('idMozo', $empleadoId)
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
         // Pedidos entregados al mozo (estado 3) - Listos para entregar a comensales
-        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
+        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido'])
             ->where('idEstadoPedido', 3) // Entregado a Mozo
-            ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
+            ->where('idMozo', $empleadoId)
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
         // Pedidos entregados a comensales (estado 4) - Listos para cobrar
-        $pedidosParaCobrar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
+        $pedidosParaCobrar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido'])
             ->where('idEstadoPedido', 4) // Entregado a Comensales
-            ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
+            ->where('idMozo', $empleadoId)
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
@@ -159,6 +161,46 @@ class Index extends Component
             method: 'cambiarEstado',
             params: ['idPedido' => $idPedido, 'estado' => 4]
         );
+    }
+
+    public function entregarPedidoParaLlevar($idPedido)
+    {
+        $this->confirmAlert(
+            title: '¿Entregar pedido para llevar?',
+            text: 'El pedido será marcado como entregado al cliente',
+            confirmButtonText: 'Sí, entregar',
+            method: 'entregarParaLlevar',
+            params: ['idPedido' => $idPedido]
+        );
+    }
+
+    public function entregarParaLlevar($idPedido)
+    {
+        try {
+            $pedido = Pedido::findOrFail($idPedido);
+
+            // Verificar que sea un pedido para llevar
+            if ($pedido->idTipoPedido != 3) {
+                $this->errorAlert(
+                    title: 'Error',
+                    text: 'Este pedido no es de tipo Para Llevar'
+                );
+                return;
+            }
+
+            // Cambiar a estado 5 (Entregado a Comensales/Cliente final)
+            $pedido->update(['idEstadoPedido' => 5]);
+
+            $this->successAlert(
+                title: '¡Entregado!',
+                text: 'Pedido para llevar entregado al cliente correctamente'
+            );
+        } catch (\Exception $e) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo actualizar el estado: ' . $e->getMessage()
+            );
+        }
     }
 
     public function cambiarEstado($idPedido, $estado)
