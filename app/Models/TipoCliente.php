@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use PhpParser\Node\Expr\Cast;
+use App\Models\ClienteRegistrado;
 
 class TipoCliente extends Model
 {
@@ -23,5 +24,9 @@ class TipoCliente extends Model
 
     public function clientes(){
         return $this->hasMany(DetalleCliente::class,'idTipoCliente');
+    }
+
+    public function clientesRegistrados(){
+        return $this->hasMany(ClienteRegistrado::class,'idTipoCliente');
     }
 }

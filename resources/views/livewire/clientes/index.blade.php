@@ -29,7 +29,7 @@
                 <select wire:model.live="tipoCliente" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                     <option value="">Todos</option>
                     @foreach($tiposCliente as $tipo)
-                        <option value="{{ $tipo->idTipoCliente }}">{{ $tipo->nombreTipoCliente }}</option>
+                        <option value="{{ $tipo->idTipoCliente }}">{{ $tipo->descripcionTipoCliente }}</option>
                     @endforeach
                 </select>
             </div>
@@ -76,7 +76,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                                    {{ $cliente->tipoCliente->nombreTipoCliente }}
+                                    {{ $cliente->tipoCliente->descripcionTipoCliente }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">

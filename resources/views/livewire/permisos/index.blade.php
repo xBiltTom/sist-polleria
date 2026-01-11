@@ -1,240 +1,226 @@
 <div>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
-                    Permisos del Sistema
-                </h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Gestiona los permisos disponibles en el sistema
-                </p>
-            </div>
-            <div class="flex gap-2">
-                @if(count($routesWithoutPermission) > 0)
-                    <x-btn variant="secondary" wire:click="confirmSyncPermissions">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                        Sincronizar ({{ count($routesWithoutPermission) }})
-                    </x-btn>
-                @endif
-                <x-btn variant="primary" wire:click="openCreateModal">
-                    + Nuevo Permiso
-                </x-btn>
-            </div>
-        </div>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Gestión de Permisos</h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Administra módulos, rutas y permisos</p>
     </x-slot>
 
-    <!-- Filtros -->
-    <x-card class="m-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
-                <input
-                    type="text"
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Nombre del permiso..."
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Módulo</label>
-                <select wire:model.live="moduleFilter" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                    <option value="">Todos los módulos</option>
-                    @foreach($modules as $key => $module)
-                        <option value="{{ $key }}">{{ $module['label'] }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </x-card>
-
-    <!-- Vista por módulos -->
-    <div class="m-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        @foreach($permissionsByModule as $moduleName => $moduleData)
-            <x-card>
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-polleria-100 dark:bg-polleria-900">
-                            <x-sidebar-icon :icon="$moduleData['info']['icon'] ?? 'folder'" class="w-5 h-5 text-polleria-600 dark:text-polleria-400" />
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white">
-                                {{ $moduleData['info']['label'] ?? ucfirst($moduleName) }}
-                            </h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ count($moduleData['permissions']) }} permisos
-                            </p>
-                        </div>
-                    </div>
-                    @if(isset($modules[$moduleName]))
-                        <button
-                            wire:click="confirmGenerateModulePermissions('{{ $moduleName }}')"
-                            class="text-xs text-polleria-600 hover:text-polleria-700 dark:text-polleria-400"
-                            title="Generar permisos CRUD"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                            </svg>
-                        </button>
-                    @endif
-                </div>
-
-                <div class="space-y-2">
-                    @foreach($moduleData['permissions'] as $permission)
-                        <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <div class="flex items-center gap-2">
-                                @php
-                                    $parsed = \App\Services\PermissionService::parsePermissionName($permission->name);
-                                    $actionColors = [
-                                        'ver' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                        'crear' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-                                        'editar' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-                                        'eliminar' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-                                    ];
-                                    $actionColor = $actionColors[$parsed['action']] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-                                @endphp
-                                <span class="px-2 py-0.5 text-xs rounded-full {{ $actionColor }}">
-                                    {{ $parsed['action'] ?: 'custom' }}
-                                </span>
-                                <span class="text-sm text-gray-700 dark:text-gray-300">
-                                    {{ $permission->name }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ $permission->roles->count() }} roles
-                                </span>
-                                <button
-                                    wire:click="confirmDelete({{ $permission->id }})"
-                                    class="text-red-500 hover:text-red-700 p-1"
-                                    title="Eliminar permiso"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </x-card>
-        @endforeach
+    <!-- Header con botones -->
+    <div class="mb-4 px-4 pt-4 flex justify-end">
+        <x-btn variant="secondary" wire:click="openModuleModal">+ Módulo</x-btn>
     </div>
 
-    <!-- Rutas sin permiso asignado -->
-    @if(count($routesWithoutPermission) > 0)
-        <x-card class="m-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Rutas Pendientes de Permiso
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Estas rutas no tienen un permiso asociado. Puedes crear los permisos individualmente o sincronizar todos.
-            </p>
+    <x-card class="m-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">1. Módulos</h3>
+        @if(count($allModules) > 0)
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($allModules as $module)
+                    <div class="p-4 rounded-lg border {{ $module->is_system ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20' : 'bg-gray-50 border-gray-200 dark:bg-gray-800' }}">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <x-sidebar-icon :icon="$module->icon" class="w-5 h-5" />
+                                <div>
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $module->name }}</span>
+                                    <p class="text-xs text-gray-500">{{ $module->slug }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-1">
+                                @if($module->is_system)
+                                    <span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">Sistema</span>
+                                @else
+                                    <button wire:click="confirmDeleteModule({{ $module->id }})" class="p-1 text-red-500 hover:text-red-700" title="Eliminar módulo">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">{{ $module->permissions_count }} permisos</p>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-center py-8 text-gray-500">No hay módulos. Crea uno para comenzar.</p>
+        @endif
+    </x-card>
 
+    <x-card class="m-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            2. Rutas sin Protección
+            <span class="ml-2 px-2 py-0.5 text-sm rounded bg-yellow-100 text-yellow-800">{{ count($routesWithoutPermission) }}</span>
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">Asigna un permiso a cada ruta para protegerla.</p>
+        @if(count($routesWithoutPermission) > 0)
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-300">
+                <table class="w-full text-sm">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th class="px-4 py-3">Ruta</th>
-                            <th class="px-4 py-3">URI</th>
-                            <th class="px-4 py-3">Módulo</th>
-                            <th class="px-4 py-3">Permiso Sugerido</th>
+                            <th class="px-4 py-3 text-left">Ruta</th>
+                            <th class="px-4 py-3 text-left">URI</th>
+                            <th class="px-4 py-3 text-left">Permiso Sugerido</th>
                             <th class="px-4 py-3 text-right">Acción</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                    <tbody class="divide-y">
                         @foreach($routesWithoutPermission as $route)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                    {{ $route['name'] }}
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                                    <code class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                        {{ $route['uri'] }}
-                                    </code>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                                        {{ $route['module'] }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                                    {{ $route['suggested_permission'] }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end">
-                                        <x-btn variant="secondary" size="sm" wire:click="createPermissionFromRoute('{{ $route['suggested_permission'] }}')">
-                                            Crear
-                                        </x-btn>
-                                    </div>
+                                <td class="px-4 py-3 font-medium">{{ $route['name'] }}</td>
+                                <td class="px-4 py-3"><code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ $route['uri'] }}</code></td>
+                                <td class="px-4 py-3 text-gray-600">{{ $route['suggested_permission'] }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <x-btn variant="secondary" size="sm" wire:click="openRouteModal({{ json_encode($route) }})">Asignar</x-btn>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-        </x-card>
-    @endif
+        @else
+            <p class="text-center py-4 text-green-600">Todas las rutas están protegidas.</p>
+        @endif
+    </x-card>
 
-    <!-- Modal para crear permiso -->
-    @if($showCreateModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeCreateModal"></div>
+    <x-card class="m-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            3. Rutas Protegidas
+            <span class="ml-2 px-2 py-0.5 text-sm rounded bg-green-100 text-green-800">{{ count($routesWithPermission) }}</span>
+        </h3>
+        @if(count($routesWithPermission) > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Ruta</th>
+                            <th class="px-4 py-3 text-left">Permiso</th>
+                            <th class="px-4 py-3 text-left">Módulo</th>
+                            <th class="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @foreach($routesWithPermission as $rp)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td class="px-4 py-3 font-medium">{{ $rp->route_name }}</td>
+                                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">{{ $rp->permission_name }}</span></td>
+                                <td class="px-4 py-3 text-gray-600">{{ $rp->module?->name ?? '-' }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button wire:click="confirmRemoveRoutePermission({{ $rp->id }})" class="text-red-500 hover:text-red-700 text-xs">Quitar</button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="text-center py-4 text-gray-500">No hay rutas protegidas aún.</p>
+        @endif
+    </x-card>
 
-                <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                            Crear Nuevo Permiso
-                        </h3>
-
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Nombre del Permiso
-                                </label>
-                                <input
-                                    type="text"
-                                    wire:model="newPermissionName"
-                                    placeholder="ej: ver-reportes, gestionar-configuracion"
-                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                @error('newPermissionName')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Formato recomendado: accion-modulo (ej: ver-empleados, crear-productos)
-                                </p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Módulo (opcional)
-                                </label>
-                                <select
-                                    wire:model="newPermissionModule"
-                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                    <option value="">Seleccionar módulo</option>
-                                    @foreach($modules as $key => $module)
-                                        <option value="{{ $key }}">{{ $module['label'] }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
+    <x-card class="m-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">4. Permisos por Módulo</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            @forelse($permissionsByModule as $moduleName => $data)
+                <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center gap-2 mb-3">
+                        <x-sidebar-icon :icon="$data['info']['icon'] ?? 'folder'" class="w-5 h-5" />
+                        <span class="font-semibold">{{ $data['info']['label'] ?? ucfirst($moduleName) }}</span>
+                        <span class="text-xs text-gray-500">({{ count($data['permissions']) }})</span>
                     </div>
-
-                    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                        <x-btn variant="primary" wire:click="createPermission">
-                            Crear Permiso
-                        </x-btn>
-                        <x-btn variant="secondary" wire:click="closeCreateModal">
-                            Cancelar
-                        </x-btn>
+                    <div class="space-y-1">
+                        @foreach($data['permissions'] as $permission)
+                            @php
+                                $parsed = \App\Services\PermissionService::parsePermissionName($permission->name);
+                                $colors = ['ver'=>'bg-blue-100 text-blue-800','crear'=>'bg-green-100 text-green-800','editar'=>'bg-yellow-100 text-yellow-800','eliminar'=>'bg-red-100 text-red-800'];
+                                $color = $colors[$parsed['action']] ?? 'bg-gray-100 text-gray-800';
+                            @endphp
+                            <div class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 text-xs rounded {{ $color }}">{{ $parsed['action'] ?: 'otro' }}</span>
+                                    <span class="text-sm">{{ $permission->name }}</span>
+                                </div>
+                                <button wire:click="confirmDeletePermission({{ $permission->id }})" class="text-red-500 hover:text-red-700 p-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        @endforeach
                     </div>
+                </div>
+            @empty
+                <p class="col-span-2 text-center py-8 text-gray-500">No hay permisos creados.</p>
+            @endforelse
+        </div>
+    </x-card>
+
+    @if($showModuleModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75" wire:click="closeModuleModal"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Crear Módulo</h3>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                        <input type="text" wire:model.live="moduleName" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="Ej: Estado Empleado">
+                        @error('moduleName')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug</label>
+                        <input type="text" wire:model="moduleSlug" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="estado-empleado">
+                        @error('moduleSlug')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+                        <input type="text" wire:model="moduleDescription" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icono</label>
+                        <select wire:model.defer="moduleIcon" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            @foreach($availableIcons as $icon => $label)<option value="{{ $icon }}">{{ $label }}</option>@endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end gap-2">
+                    <x-btn variant="secondary" wire:click="closeModuleModal">Cancelar</x-btn>
+                    <x-btn variant="primary" wire:click="createModule">Crear</x-btn>
                 </div>
             </div>
         </div>
+    </div>
+    @endif
+
+    @if($showRouteModal)
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75" wire:click="closeRouteModal"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b"><h3 class="text-lg font-medium">Asignar Permiso a Ruta</h3></div>
+                <div class="px-6 py-4 space-y-4">
+                    <div class="p-3 rounded bg-gray-100 dark:bg-gray-700">
+                        <p class="text-sm"><strong>Ruta:</strong> {{ $selectedRoute['name'] ?? '' }}</p>
+                        <p class="text-sm"><strong>URI:</strong> {{ $selectedRoute['uri'] ?? '' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nombre del Permiso *</label>
+                        <input type="text" wire:model="routePermissionName" class="w-full rounded-lg border-gray-300 dark:bg-gray-700" placeholder="crear-estado-empleado">
+                        @error('routePermissionName')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Módulo *</label>
+                        <select wire:model="routeModuleId" class="w-full rounded-lg border-gray-300 dark:bg-gray-700">
+                            <option value="0">Seleccionar módulo...</option>
+                            @foreach($allModules as $module)<option value="{{ $module->id }}">{{ $module->name }}</option>@endforeach
+                        </select>
+                        @error('routeModuleId')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="p-3 rounded bg-green-50 text-sm text-green-800">
+                        <strong>Nota:</strong> Al asignar, la ruta quedará protegida automáticamente. Los usuarios sin este permiso no podrán acceder.
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                    <x-btn variant="secondary" wire:click="closeRouteModal">Cancelar</x-btn>
+                    <x-btn variant="primary" wire:click="assignRoutePermission">Asignar</x-btn>
+                </div>
+            </div>
+        </div>
+    </div>
     @endif
 </div>

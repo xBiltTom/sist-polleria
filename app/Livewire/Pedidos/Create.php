@@ -3,6 +3,7 @@
 namespace App\Livewire\Pedidos;
 
 use App\Models\ClienteRegistrado;
+use App\Models\CategoriaProducto;
 use App\Models\DetalleCliente;
 use App\Models\DetallePedido;
 use App\Models\Mesa;
@@ -31,6 +32,7 @@ class Create extends Component
     public $apellidoCliente = '';
     public $tipoPersona = 'natural'; // 'natural' o 'juridica'
     public $documento = '';
+    public $dniRepresentante = ''; // DNI del representante legal para personas jurídicas
     public $celular = '';
     public $direccion = '';
     public $razonSocial = '';
@@ -40,6 +42,8 @@ class Create extends Component
     public $productosSeleccionados = [];
     public $cantidades = [];
     public $busqueda = '';
+    public $categoriaFiltro = ''; // Filtro por categoría
+    public $categorias = []; // Lista de categorías
 
     // Modalidad dividida: Cliente activo
     public $clienteActivoIndex = null;
@@ -47,31 +51,50 @@ class Create extends Component
 
     protected $queryString = ['step'];
 
+    // Listeners para eventos de SweetAlert
+    protected $listeners = ['registrarPedido'];
+
     // Constantes de estados
     const ESTADO_PENDIENTE = 1;
-    const ESTADO_EN_PREPARACION = 2;
-    const ESTADO_TERMINADO = 3;
-    const ESTADO_ENTREGADO_MOZO = 4;
-    const ESTADO_ENTREGADO_COMENSALES = 5;
-    const ESTADO_POR_COBRAR = 6;
+    const ESTADO_ENVIADO_COCINA = 2;
+    const ESTADO_ENTREGADO_MOZO = 3;
+    const ESTADO_ENTREGADO_COMENSALES = 4;
     const ESTADO_COBRADO = 7;
-    const ESTADO_CANCELADO = 8;
 
-    public function mount($mesa)
+    // Variable para saber si estamos editando
+    public $editando = false;
+    public $pedidoId = null;
+
+
+    public function mount($mesa, $pedido = null)
     {
         $this->mesa = Mesa::with('estadoMesa')->findOrFail($mesa);
 
-        // Verificar que la mesa esté disponible (contiene la palabra "libre")
-        if (stripos($this->mesa->estadoMesa->descripcionEstadoMesa, 'libre') === false) {
-            $this->errorAlert(
-                title: 'Mesa no disponible',
-                text: 'Esta mesa ya está ocupada.'
-            );
-            return redirect()->route('pedidos.salon.index');
+        // Si estamos editando un pedido existente
+        if ($pedido) {
+            $this->editando = true;
+            $this->pedidoId = $pedido;
+            $this->cargarPedidoParaEditar($pedido);
+        } else {
+            // Verificar que la mesa esté disponible (contiene la palabra "libre")
+            if (stripos($this->mesa->estadoMesa->descripcionEstadoMesa, 'libre') === false) {
+                $this->errorAlert(
+                    title: 'Mesa no disponible',
+                    text: 'Esta mesa ya está ocupada.'
+                );
+                return redirect()->route('pedidos.salon.index');
+            }
+
+            $this->clientes = []; // Iniciar con array vacío
         }
 
         $this->modalidades = ModalidadPagoPedido::where('estadoDB', 1)->get();
-        $this->clientes = []; // Iniciar con array vacío
+
+        // Cargar categorías vendibles
+        $this->categorias = CategoriaProducto::where('estadoDB', 1)
+            ->where('vendibles', 1)
+            ->orderBy('nombreCategoriaProducto')
+            ->get();
     }
 
     public function rules()
@@ -95,6 +118,7 @@ class Create extends Component
                 $rules['documento'] = 'required|digits:8';
             } else {
                 $rules['documento'] = 'required|digits:11';
+                $rules['dniRepresentante'] = 'required|digits:8';
                 $rules['razonSocial'] = 'required|string|max:255';
             }
 
@@ -187,7 +211,7 @@ class Create extends Component
             'apellido' => $this->apellidoCliente,
             'tipoPersona' => $this->tipoPersona,
             'idTipoCliente' => $idTipoCliente,
-            'dni' => $this->tipoPersona === 'natural' ? $this->documento : null,
+            'dni' => $this->tipoPersona === 'natural' ? $this->documento : $this->dniRepresentante,
             'ruc' => $this->tipoPersona === 'juridica' ? $this->documento : null,
             'celular' => $this->celular,
             'direccion' => $this->direccion,
@@ -200,7 +224,7 @@ class Create extends Component
         }
 
         // Limpiar campos
-        $this->reset(['nombreCliente', 'apellidoCliente', 'documento', 'celular', 'direccion', 'razonSocial']);
+        $this->reset(['nombreCliente', 'apellidoCliente', 'documento', 'dniRepresentante', 'celular', 'direccion', 'razonSocial']);
     }
 
     public function eliminarCliente($index)
@@ -250,10 +274,16 @@ class Create extends Component
             })
             ->where('stockProducto', '>', 0)
             ->when($this->busqueda, fn($q) => $q->where('nombreProducto', 'like', "%{$this->busqueda}%"))
+            ->when($this->categoriaFiltro, fn($q) => $q->where('idCategoriaProducto', $this->categoriaFiltro))
             ->get();
     }
 
     public function updatedBusqueda()
+    {
+        $this->cargarProductos();
+    }
+
+    public function updatedCategoriaFiltro()
     {
         $this->cargarProductos();
     }
@@ -381,6 +411,88 @@ class Create extends Component
         return collect($this->productosSeleccionados)->sum('cantidad');
     }
 
+    // Método para confirmar antes de registrar el pedido
+    public function confirmarRegistroPedido()
+    {
+        $this->confirmAlert(
+            title: '¿Enviar pedido a zona de pendientes?',
+            text: 'El pedido será registrado y enviado al mozo',
+            confirmButtonText: 'Sí, registrar',
+            method: 'registrarPedido'
+        );
+    }
+
+    // Método para cargar un pedido existente para editar
+    private function cargarPedidoParaEditar($pedidoId)
+    {
+        $pedido = Pedido::with([
+            'detallesCliente',
+            'detalles.producto'
+        ])->findOrFail($pedidoId);
+
+        // Cargar modalidad de pago
+        $this->modalidadPago = $pedido->idModalidadPagoPedido == 1 ? 'total' : 'dividida';
+
+        // Cargar clientes
+        $this->clientes = [];
+        foreach ($pedido->detallesCliente as $detalleCliente) {
+            $this->clientes[] = [
+                'nombre' => $detalleCliente->nombreCliente,
+                'apellido' => $detalleCliente->apellidoCliente,
+                'idTipoCliente' => $detalleCliente->idTipoCliente,
+                'dni' => $detalleCliente->dniCliente,
+                'ruc' => $detalleCliente->RUC,
+                'celular' => $detalleCliente->celularCliente,
+                'direccion' => $detalleCliente->direccion,
+                'razonSocial' => $detalleCliente->razonSocial,
+                'tipoPersona' => $detalleCliente->dniCliente ? 'natural' : 'juridica',
+            ];
+        }
+
+        // Cargar productos
+        if ($this->modalidadPago === 'total') {
+            // Modalidad total: cargar en productosSeleccionados
+            $this->productosSeleccionados = [];
+            foreach ($pedido->detalles as $detalle) {
+                $this->productosSeleccionados[$detalle->idProducto] = [
+                    'producto' => $detalle->producto,
+                    'cantidad' => $detalle->cantidadProductoPedido,
+                    'precio' => $detalle->precioUnitarioProductoPedido,
+                    'subtotal' => $detalle->cantidadProductoPedido * $detalle->precioUnitarioProductoPedido,
+                ];
+            }
+        } else {
+            // Modalidad dividida: cargar en productosPorCliente
+            $this->productosPorCliente = [];
+            foreach ($pedido->detalles as $detalle) {
+                // Encontrar el índice del cliente por DNI/RUC
+                $clienteIndex = null;
+                foreach ($this->clientes as $index => $cliente) {
+                    $dniPidiente = $cliente['dni'] ?? $cliente['ruc'];
+                    if ($dniPidiente == $detalle->dniPidente) {
+                        $clienteIndex = $index;
+                        break;
+                    }
+                }
+
+                if ($clienteIndex !== null) {
+                    if (!isset($this->productosPorCliente[$clienteIndex])) {
+                        $this->productosPorCliente[$clienteIndex] = [];
+                    }
+                    $this->productosPorCliente[$clienteIndex][$detalle->idProducto] = [
+                        'producto' => $detalle->producto,
+                        'cantidad' => $detalle->cantidadProductoPedido,
+                        'precio' => $detalle->precioUnitarioProductoPedido,
+                        'subtotal' => $detalle->cantidadProductoPedido * $detalle->precioUnitarioProductoPedido,
+                    ];
+                }
+            }
+        }
+
+        // Ir directamente al paso 3 (productos)
+        $this->step = 3;
+    }
+
     public function registrarPedido()
     {
         if (empty($this->clientes)) {
@@ -414,21 +526,45 @@ class Create extends Component
                 // Determinar ID de modalidad de pago: 1 = Total, 2 = Dividida
                 $idModalidadPago = $this->modalidadPago === 'total' ? 1 : 2;
 
-                // 1. Crear el pedido
-                $pedido = Pedido::create([
-                    'idMesa' => $this->mesa->idMesa,
-                    'idModalidadPagoPedido' => $idModalidadPago,
-                    'idEstadoPedido' => self::ESTADO_EN_PREPARACION,
-                    'costoPedido' => $this->montoTotal,
-                    'fechaPedido' => now(),
-                    'idMozo' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
-                    'idTipoPedido' => 1, // 1 = Salón
-                ]);
+                // Si estamos editando, restaurar stock del pedido anterior
+                if ($this->editando && $this->pedidoId) {
+                    $pedidoAnterior = Pedido::with('detalles')->find($this->pedidoId);
+                    if ($pedidoAnterior) {
+                        foreach ($pedidoAnterior->detalles as $detalle) {
+                            $producto = Producto::find($detalle->idProducto);
+                            if ($producto) {
+                                $producto->increment('stockProducto', $detalle->cantidadProductoPedido);
+                            }
+                        }
+                        // Eliminar detalles y clientes anteriores
+                        $pedidoAnterior->detalles()->delete();
+                        $pedidoAnterior->detallesCliente()->delete();
+                    }
+                }
 
-                // 2. Registrar clientes y productos
+                // 1. Crear o actualizar el pedido
+                if ($this->editando && $this->pedidoId) {
+                    $pedido = Pedido::find($this->pedidoId);
+                    $pedido->update([
+                        'idModalidadPagoPedido' => $idModalidadPago,
+                        'costoPedido' => $this->montoTotal,
+                    ]);
+                } else {
+                    $pedido = Pedido::create([
+                        'idMesa' => $this->mesa->idMesa,
+                        'idModalidadPagoPedido' => $idModalidadPago,
+                        'idEstadoPedido' => self::ESTADO_PENDIENTE,
+                        'costoPedido' => $this->montoTotal,
+                        'fechaPedido' => now(),
+                        'idMozo' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
+                        'idTipoPedido' => 1, // 1 = Salón
+                    ]);
+                }                // 2. Registrar clientes y productos
                 if ($this->modalidadPago === 'total') {
                     // Modalidad Total: un solo cliente
                     $clienteData = $this->clientes[0];
+
+                    // Guardar en detalle_clientes
                     DetalleCliente::create([
                         'idPedido' => $pedido->idPedido,
                         'nombreCliente' => $clienteData['nombre'],
@@ -440,6 +576,26 @@ class Create extends Component
                         'direccion' => $clienteData['direccion'],
                         'razonSocial' => $clienteData['razonSocial'],
                     ]);
+
+                    // Guardar en clientes_registrados (solo si no existe)
+                    ClienteRegistrado::firstOrCreate(
+                        [
+                            'dniCliente' => $clienteData['dni'],
+                            'RUC' => $clienteData['ruc'],
+                        ],
+                        [
+                            'nombreCliente' => $clienteData['nombre'],
+                            'apellidoCliente' => $clienteData['apellido'],
+                            'idTipoCliente' => $clienteData['idTipoCliente'],
+                            'RUC' => $clienteData['ruc'],
+                            'dniCliente' => $clienteData['dni'],
+                            'celularCliente' => $clienteData['celular'],
+                            'direccionCliente' => $clienteData['direccion'],
+                            'razonSocial' => $clienteData['razonSocial'],
+                            'estadoCliente' => 1,
+                            'estadoDB' => 1,
+                        ]
+                    );
 
                     // Registrar productos
                     foreach ($this->productosSeleccionados as $idProducto => $item) {
@@ -459,6 +615,7 @@ class Create extends Component
                 } else {
                     // Modalidad Dividida: múltiples clientes con sus productos
                     foreach ($this->clientes as $index => $clienteData) {
+                        // Guardar en detalle_clientes
                         DetalleCliente::create([
                             'idPedido' => $pedido->idPedido,
                             'nombreCliente' => $clienteData['nombre'],
@@ -470,6 +627,26 @@ class Create extends Component
                             'direccion' => $clienteData['direccion'],
                             'razonSocial' => $clienteData['razonSocial'],
                         ]);
+
+                        // Guardar en clientes_registrados (solo si no existe)
+                        ClienteRegistrado::firstOrCreate(
+                            [
+                                'dniCliente' => $clienteData['dni'],
+                                'RUC' => $clienteData['ruc'],
+                            ],
+                            [
+                                'nombreCliente' => $clienteData['nombre'],
+                                'apellidoCliente' => $clienteData['apellido'],
+                                'idTipoCliente' => $clienteData['idTipoCliente'],
+                                'RUC' => $clienteData['ruc'],
+                                'dniCliente' => $clienteData['dni'],
+                                'celularCliente' => $clienteData['celular'],
+                                'direccionCliente' => $clienteData['direccion'],
+                                'razonSocial' => $clienteData['razonSocial'],
+                                'estadoCliente' => 1,
+                                'estadoDB' => 1,
+                            ]
+                        );
 
                         // Registrar productos de este cliente
                         if (isset($this->productosPorCliente[$index])) {
@@ -491,13 +668,19 @@ class Create extends Component
                     }
                 }
 
-                // 3. Actualizar estado de la mesa a "Ocupada" (ID = 2)
-                $this->mesa->update(['idEstadoMesa' => 2]);
+                // 3. Actualizar estado de la mesa a "Ocupada" (ID = 2) solo si es nuevo pedido
+                if (!$this->editando) {
+                    $this->mesa->update(['idEstadoMesa' => 2]);
+                }
             });
 
+            $mensaje = $this->editando
+                ? 'El pedido ha sido actualizado correctamente'
+                : 'El pedido ha sido registrado correctamente';
+
             $this->successAlert(
-                title: '¡Pedido Registrado!',
-                text: 'El pedido ha sido enviado a preparación correctamente'
+                title: $this->editando ? '¡Pedido Actualizado!' : '¡Pedido Registrado!',
+                text: $mensaje
             );
 
             return redirect()->route('pedidos.salon.index');

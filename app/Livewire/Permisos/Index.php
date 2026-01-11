@@ -2,77 +2,188 @@
 
 namespace App\Livewire\Permisos;
 
+use App\Models\PermissionModule;
+use App\Models\RoutePermission;
 use App\Services\PermissionService;
 use App\Traits\WithSweetAlert;
+use Illuminate\Support\Str;
 use Livewire\Component;
-use Livewire\WithPagination;
 use Spatie\Permission\Models\Permission;
 
 class Index extends Component
 {
-    use WithPagination, WithSweetAlert;
+    use WithSweetAlert;
 
-    public string $search = '';
-    public string $moduleFilter = '';
-    public string $sortBy = 'name';
-    public string $sortDirection = 'asc';
+    public bool $showModuleModal = false;
+    public string $moduleName = '';
+    public string $moduleSlug = '';
+    public string $moduleDescription = '';
+    public string $moduleIcon = 'folder';
 
-    // Para crear permiso
-    public bool $showCreateModal = false;
-    public string $newPermissionName = '';
-    public string $newPermissionModule = '';
+    public bool $showRouteModal = false;
+    public array $selectedRoute = [];
+    public string $routePermissionName = '';
+    public int $routeModuleId = 0;
 
-    protected $queryString = [
-        'search' => ['except' => ''],
-        'moduleFilter' => ['except' => ''],
-    ];
-
-    protected $listeners = ['delete', 'syncPermissions', 'generateModulePermissions'];
-
-    public function updatingSearch(): void
+    protected $listeners = ['deletePermission', 'deleteModule', 'removeRoutePermission'];    public function updatedModuleName(): void
     {
-        $this->resetPage();
+        $this->moduleSlug = Str::slug($this->moduleName);
     }
 
-    public function updatingModuleFilter(): void
+    // ========== MÓDULOS ==========
+
+    public function openModuleModal(): void
     {
-        $this->resetPage();
+        $this->reset(['moduleName', 'moduleSlug', 'moduleDescription', 'moduleIcon']);
+        $this->moduleIcon = 'folder';
+        $this->showModuleModal = true;
     }
 
-    public function sortBy(string $field): void
+    public function closeModuleModal(): void
     {
-        if ($this->sortBy === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortBy = $field;
-            $this->sortDirection = 'asc';
+        $this->showModuleModal = false;
+    }
+
+    public function createModule(): void
+    {
+        $this->validate([
+            'moduleName' => 'required|string|max:100',
+            'moduleSlug' => 'required|string|max:100|unique:permission_modules,slug',
+        ], [
+            'moduleName.required' => 'El nombre es obligatorio.',
+            'moduleSlug.unique' => 'Este identificador ya existe.',
+        ]);
+
+        PermissionService::createModule(
+            $this->moduleName,
+            $this->moduleSlug,
+            $this->moduleDescription ?: null,
+            $this->moduleIcon,
+            false
+        );
+
+        $this->closeModuleModal();
+        $this->successAlert('Módulo Creado', 'El módulo se ha creado correctamente.');
+    }
+
+    public function confirmDeleteModule(int $id): void
+    {
+        $module = PermissionModule::find($id);
+        if (!$module || $module->is_system) {
+            $this->errorAlert('Error', 'No se puede eliminar este módulo.');
+            return;
+        }
+
+        $this->confirmAlert(
+            title: '¿Eliminar módulo?',
+            text: "Se eliminará '{$module->name}'.",
+            confirmButtonText: 'Sí, eliminar',
+            method: 'deleteModule',
+            params: [$id]
+        );
+    }
+
+    public function deleteModule(int $id): void
+    {
+        $module = PermissionModule::find($id);
+        if ($module && !$module->is_system) {
+            $module->delete();
+            $this->successAlert('Eliminado', 'Módulo eliminado.');
         }
     }
 
-    public function getPermissionsProperty()
+    // ========== ASIGNAR RUTA ==========
+
+    public function openRouteModal(array $route): void
     {
-        $query = Permission::query();
-
-        if ($this->search) {
-            $query->where('name', 'like', "%{$this->search}%");
-        }
-
-        if ($this->moduleFilter) {
-            $query->where('name', 'like', "%-{$this->moduleFilter}%")
-                  ->orWhere('name', 'like', "{$this->moduleFilter}-%");
-        }
-
-        return $query->orderBy($this->sortBy, $this->sortDirection)->paginate(15);
+        $this->selectedRoute = $route;
+        $this->routePermissionName = $route['suggested_permission'] ?? '';
+        $this->routeModuleId = 0;
+        $this->showRouteModal = true;
     }
 
-    public function getModulesProperty(): array
+    public function closeRouteModal(): void
     {
-        return PermissionService::getModules();
+        $this->showRouteModal = false;
+        $this->reset(['selectedRoute', 'routePermissionName', 'routeModuleId']);
     }
 
-    public function getActionsProperty(): array
+    public function assignRoutePermission(): void
     {
-        return PermissionService::getActions();
+        $this->validate([
+            'routePermissionName' => 'required|string|max:100',
+            'routeModuleId' => 'required|integer|min:1',
+        ], [
+            'routePermissionName.required' => 'El nombre del permiso es obligatorio.',
+            'routeModuleId.required' => 'Debe seleccionar un módulo.',
+            'routeModuleId.min' => 'Debe seleccionar un módulo.',
+        ]);
+
+        PermissionService::assignPermissionToRoute(
+            $this->selectedRoute['name'],
+            $this->routePermissionName,
+            $this->routeModuleId
+        );
+
+        $this->closeRouteModal();
+        $this->successAlert('Ruta Protegida', "La ruta ahora requiere el permiso '{$this->routePermissionName}'.");
+    }
+
+    public function confirmRemoveRoutePermission(int $id): void
+    {
+        $rp = RoutePermission::find($id);
+        if (!$rp) return;
+
+        $this->confirmAlert(
+            title: '¿Quitar protección?',
+            text: "La ruta '{$rp->route_name}' quedará sin protección.",
+            confirmButtonText: 'Sí, quitar',
+            method: 'removeRoutePermission',
+            params: [$id]
+        );
+    }
+
+    public function removeRoutePermission(int $id): void
+    {
+        $rp = RoutePermission::find($id);
+        if ($rp) {
+            PermissionService::removePermissionFromRoute($rp->route_name);
+            $this->successAlert('Protección Removida', 'La ruta ya no está protegida.');
+        }
+    }
+
+    // ========== PERMISOS ==========
+
+    public function confirmDeletePermission(int $id): void
+    {
+        $permission = Permission::find($id);
+        if (!$permission) return;
+
+        $this->confirmAlert(
+            title: '¿Eliminar permiso?',
+            text: "Se eliminará '{$permission->name}'.",
+            confirmButtonText: 'Eliminar',
+            method: 'deletePermission',
+            params: [$id]
+        );
+    }
+
+    public function deletePermission(int $id): void
+    {
+        $permission = Permission::find($id);
+        if ($permission) {
+            RoutePermission::where('permission_name', $permission->name)->delete();
+            $permission->delete();
+            PermissionService::clearRoutePermissionCache();
+            $this->successAlert('Eliminado', 'Permiso eliminado.');
+        }
+    }
+
+    // ========== PROPIEDADES ==========
+
+    public function getAllModulesProperty()
+    {
+        return PermissionModule::orderBy('name')->get();
     }
 
     public function getRoutesWithoutPermissionProperty(): array
@@ -80,143 +191,46 @@ class Index extends Component
         return PermissionService::getRoutesWithoutPermission();
     }
 
+    public function getRoutesWithPermissionProperty()
+    {
+        return RoutePermission::with('module')->orderBy('route_name')->get();
+    }
+
     public function getPermissionsByModuleProperty(): array
     {
         return PermissionService::getPermissionsByModule();
     }
 
-    public function openCreateModal(): void
+    public function getAvailableIconsProperty(): array
     {
-        $this->reset(['newPermissionName', 'newPermissionModule']);
-        $this->showCreateModal = true;
-    }
-
-    public function closeCreateModal(): void
-    {
-        $this->showCreateModal = false;
-        $this->reset(['newPermissionName', 'newPermissionModule']);
-    }
-
-    public function createPermission(): void
-    {
-        $this->validate([
-            'newPermissionName' => 'required|string|max:100|unique:permissions,name',
-        ], [
-            'newPermissionName.required' => 'El nombre del permiso es obligatorio.',
-            'newPermissionName.unique' => 'Este permiso ya existe.',
-        ]);
-
-        Permission::create([
-            'name' => $this->newPermissionName,
-            'guard_name' => 'web',
-        ]);
-
-        $this->closeCreateModal();
-        $this->successAlert('Permiso Creado', 'El permiso se ha creado correctamente.');
-    }
-
-    public function createPermissionFromRoute(string $permissionName): void
-    {
-        PermissionService::createPermissionIfNotExists($permissionName);
-        $this->successAlert('Permiso Creado', "El permiso '{$permissionName}' se ha creado correctamente.");
-    }
-
-    public function confirmDelete(int $id): void
-    {
-        $permission = Permission::find($id);
-
-        if (!$permission) {
-            $this->errorAlert('Error', 'Permiso no encontrado.');
-            return;
-        }
-
-        $this->confirmAlert(
-            title: '¿Eliminar permiso?',
-            text: "Se eliminará el permiso '{$permission->name}'. Esta acción no se puede deshacer.",
-            confirmButtonText: 'Sí, eliminar',
-            method: 'delete',
-            params: [$id]
-        );
-    }
-
-    public function delete(int $id): void
-    {
-        $permission = Permission::find($id);
-
-        if (!$permission) {
-            $this->errorAlert('Error', 'Permiso no encontrado.');
-            return;
-        }
-
-        // Verificar si el permiso está asignado a roles
-        if ($permission->roles()->count() > 0) {
-            $this->warningAlert('Advertencia', 'Este permiso está asignado a uno o más roles. Desasócielo primero.');
-            return;
-        }
-
-        $permission->delete();
-        $this->successAlert('Eliminado', 'El permiso se ha eliminado correctamente.');
-    }
-
-    public function confirmSyncPermissions(): void
-    {
-        $routesCount = count($this->routesWithoutPermission);
-
-        if ($routesCount === 0) {
-            $this->infoAlert('Información', 'No hay rutas pendientes de sincronizar.');
-            return;
-        }
-
-        $this->confirmAlert(
-            title: '¿Sincronizar permisos?',
-            text: "Se crearán {$routesCount} permisos para las rutas pendientes.",
-            confirmButtonText: 'Sí, sincronizar',
-            method: 'syncPermissions'
-        );
-    }
-
-    public function syncPermissions(): void
-    {
-        $routes = $this->routesWithoutPermission;
-        $created = 0;
-
-        foreach ($routes as $route) {
-            PermissionService::createPermissionIfNotExists($route['suggested_permission']);
-            $created++;
-        }
-
-        $this->successAlert('Sincronización Completa', "Se han creado {$created} permisos.");
-    }
-
-    public function confirmGenerateModulePermissions(string $module): void
-    {
-        $moduleInfo = $this->modules[$module] ?? ['label' => $module];
-
-        $this->confirmAlert(
-            title: '¿Generar permisos?',
-            text: "Se crearán los permisos CRUD para el módulo '{$moduleInfo['label']}'.",
-            confirmButtonText: 'Sí, generar',
-            method: 'generateModulePermissions',
-            params: [$module]
-        );
-    }
-
-    public function generateModulePermissions(string $module): void
-    {
-        $permissions = PermissionService::createModulePermissions($module);
-        $count = count($permissions);
-
-        $this->successAlert('Permisos Generados', "Se han creado {$count} permisos para el módulo.");
+        return [
+            'folder' => 'Carpeta',
+            'users' => 'Usuarios',
+            'user-group' => 'Grupo',
+            'cube' => 'Cubo',
+            'archive-box' => 'Caja',
+            'truck' => 'Camión',
+            'table-cells' => 'Mesa',
+            'shield-check' => 'Escudo',
+            'cog-6-tooth' => 'Config',
+            'clipboard-document-list' => 'Lista',
+            'currency-dollar' => 'Dinero',
+            'chart-bar' => 'Gráfico',
+            'document-text' => 'Documento',
+            'shopping-cart' => 'Carrito',
+            'home' => 'Casa',
+            'tag' => 'Etiqueta',
+        ];
     }
 
     public function render()
     {
         return view('livewire.permisos.index', [
-            'permissions' => $this->permissions,
-            'modules' => $this->modules,
-            'actions' => $this->actions,
+            'allModules' => $this->allModules,
             'routesWithoutPermission' => $this->routesWithoutPermission,
+            'routesWithPermission' => $this->routesWithPermission,
             'permissionsByModule' => $this->permissionsByModule,
+            'availableIcons' => $this->availableIcons,
         ])->layout('layouts.dashboard');
     }
 }

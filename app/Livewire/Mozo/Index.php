@@ -2,8 +2,11 @@
 
 namespace App\Livewire\Mozo;
 
+use App\Models\Mesa;
 use App\Models\Pedido;
+use App\Models\Producto;
 use App\Traits\WithSweetAlert;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -11,29 +14,140 @@ class Index extends Component
 {
     use WithPagination, WithSweetAlert;
 
-    protected $listeners = ['cambiarEstado'];
+    public $pedidoPrevisualizar = null;
+    public $mostrarModal = false;
+
+    protected $listeners = ['cambiarEstado', 'confirmarCancelacion'];
 
     public function render()
     {
-        // Pedidos entregados al mozo (estado 4)
+        // Pedidos pendientes (estado 1) - Recién creados, esperando enviarse a cocina
         $pedidosPendientes = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
-            ->where('idEstadoPedido', 4) // Entregado a Mozo
+            ->where('idEstadoPedido', 1) // Pendiente
             ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
-        // Pedidos entregados a comensales (estado 5)
-        $pedidosEntregados = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
-            ->where('idEstadoPedido', 5) // Entregado a Comensales
+        // Pedidos entregados al mozo (estado 3) - Listos para entregar a comensales
+        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
+            ->where('idEstadoPedido', 3) // Entregado a Mozo
             ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
-            ->orderBy('fechaPedido', 'desc')
-            ->take(10)
+            ->orderBy('fechaPedido', 'asc')
+            ->get();
+
+        // Pedidos entregados a comensales (estado 4) - Listos para cobrar
+        $pedidosParaCobrar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente'])
+            ->where('idEstadoPedido', 4) // Entregado a Comensales
+            ->where('idMozo', auth()->user()->empleado?->idEmpleado ?? auth()->id())
+            ->orderBy('fechaPedido', 'asc')
             ->get();
 
         return view('livewire.mozo.index', [
             'pedidosPendientes' => $pedidosPendientes,
-            'pedidosEntregados' => $pedidosEntregados
+            'pedidosParaEntregar' => $pedidosParaEntregar,
+            'pedidosParaCobrar' => $pedidosParaCobrar
         ])->layout('layouts.dashboard');
+    }
+
+    public function previsualizarPedido($idPedido)
+    {
+        $this->pedidoPrevisualizar = Pedido::with(['mesa', 'detalles', 'detallesCliente', 'modalidadPago'])
+            ->findOrFail($idPedido);
+        $this->mostrarModal = true;
+    }
+
+    public function cerrarModal()
+    {
+        $this->mostrarModal = false;
+        $this->pedidoPrevisualizar = null;
+    }
+
+    public function editarPedido($idPedido)
+    {
+        $pedido = Pedido::with('mesa')->find($idPedido);
+
+        if (!$pedido) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se encontró el pedido'
+            );
+            return;
+        }
+
+        // Solo se pueden editar pedidos en estado Pendiente (1)
+        if ($pedido->idEstadoPedido != 1) {
+            $this->errorAlert(
+                title: 'No se puede editar',
+                text: 'Solo se pueden editar pedidos en estado Pendiente'
+            );
+            return;
+        }
+
+        // Redirigir a la página de creación con el ID del pedido
+        return redirect()->route('pedidos.create', [
+            'mesa' => $pedido->idMesa,
+            'pedido' => $idPedido
+        ]);
+    }
+
+    public function cancelarPedido($idPedido)
+    {
+        $this->confirmAlert(
+            title: '¿Cancelar pedido?',
+            text: 'Esta acción no se puede deshacer. El pedido será marcado como cancelado.',
+            confirmButtonText: 'Sí, cancelar pedido',
+            method: 'confirmarCancelacion',
+            params: ['idPedido' => $idPedido]
+        );
+    }
+
+    public function confirmarCancelacion($idPedido)
+    {
+        try {
+            DB::transaction(function () use ($idPedido) {
+                $pedido = Pedido::with(['detalles', 'mesa'])->findOrFail($idPedido);
+
+                // Restaurar el stock de todos los productos del pedido
+                foreach ($pedido->detalles as $detalle) {
+                    $producto = Producto::find($detalle->idProducto);
+                    if ($producto) {
+                        $producto->increment('stockProducto', $detalle->cantidadProductoPedido);
+                    }
+                }
+
+                // Liberar la mesa (cambiar a estado Libre, típicamente ID = 1)
+                if ($pedido->mesa) {
+                    Mesa::where('idMesa', $pedido->idMesa)->update(['idEstadoMesa' => 1]);
+                }
+
+                // Cambiar a estado 5 (Cancelado) y poner costo en 0
+                $pedido->update([
+                    'idEstadoPedido' => 5,
+                    'costoPedido' => 0.00
+                ]);
+            });
+
+            $this->successAlert(
+                title: '¡Cancelado!',
+                text: 'El pedido ha sido cancelado, el stock restaurado y la mesa liberada'
+            );
+        } catch (\Exception $e) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo cancelar el pedido: ' . $e->getMessage()
+            );
+        }
+    }
+
+    public function mandarACocina($idPedido)
+    {
+        $this->confirmAlert(
+            title: '¿Enviar a cocina?',
+            text: 'El pedido será enviado a cocina para su preparación',
+            confirmButtonText: 'Sí, enviar',
+            method: 'cambiarEstado',
+            params: ['idPedido' => $idPedido, 'estado' => 2]
+        );
     }
 
     public function marcarEntregadoComensales($idPedido)
@@ -43,7 +157,7 @@ class Index extends Component
             text: 'El pedido será marcado como entregado a los comensales',
             confirmButtonText: 'Sí, marcar',
             method: 'cambiarEstado',
-            params: ['idPedido' => $idPedido, 'estado' => 5]
+            params: ['idPedido' => $idPedido, 'estado' => 4]
         );
     }
 
@@ -53,9 +167,14 @@ class Index extends Component
             $pedido = Pedido::findOrFail($idPedido);
             $pedido->update(['idEstadoPedido' => $estado]);
 
+            $mensajes = [
+                2 => 'Pedido enviado a cocina',
+                4 => 'Pedido marcado como entregado a los comensales'
+            ];
+
             $this->successAlert(
                 title: '¡Actualizado!',
-                text: 'Pedido marcado como entregado a los comensales'
+                text: $mensajes[$estado] ?? 'Estado actualizado'
             );
         } catch (\Exception $e) {
             $this->errorAlert(

@@ -3,7 +3,11 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
-                    Nuevo Pedido - Mesa {{ $mesa->nroMesa }}
+                    @if($editando)
+                        Editando Pedido #{{ $pedidoId }} - Mesa {{ $mesa->nroMesa }}
+                    @else
+                        Nuevo Pedido - Mesa {{ $mesa->nroMesa }}
+                    @endif
                 </h2>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Capacidad: {{ $mesa->capacidadMesa }} personas
@@ -302,6 +306,23 @@
                         </div>
 
                         @if($tipoPersona === 'juridica')
+                            <!-- DNI del Representante Legal -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    DNI del Representante Legal <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    wire:model="dniRepresentante"
+                                    maxlength="8"
+                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white @error('dniRepresentante') border-red-500 @enderror"
+                                    placeholder="12345678"
+                                >
+                                @error('dniRepresentante')
+                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             <!-- Razón Social -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -495,7 +516,7 @@
                         </div>
                     @endif
 
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                             Seleccionar Productos
                             @if($modalidadPago === 'dividida' && $clienteActivoIndex !== null)
@@ -504,13 +525,37 @@
                                 </span>
                             @endif
                         </h3>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <!-- Filtro por Categoría -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Filtrar por Categoría
+                            </label>
+                            <select
+                                wire:model.live="categoriaFiltro"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">Todas las categorías</option>
+                                @foreach($categorias as $categoria)
+                                    <option value="{{ $categoria->idCategoriaProducto }}">{{ $categoria->nombreCategoriaProducto }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Buscador -->
-                        <input
-                            type="text"
-                            wire:model.live.debounce.300ms="busqueda"
-                            class="w-64 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            placeholder="Buscar productos..."
-                        >
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Buscar Producto
+                            </label>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="busqueda"
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                placeholder="Buscar productos..."
+                            >
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -521,7 +566,7 @@
                                     <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow">
                                         @if($producto->urlImagenProducto)
                                             <img
-                                                src="{{ Storage::url($producto->urlImagenProducto) }}"
+                                                src="{{ $producto->urlImagenProducto }}"
                                                 alt="{{ $producto->nombreProducto }}"
                                                 class="w-full h-32 object-cover rounded-lg mb-3"
                                             >
@@ -688,10 +733,14 @@
                                     </div>
 
                                     <button
-                                        wire:click="registrarPedido"
+                                        wire:click="confirmarRegistroPedido"
                                         class="w-full mt-4 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-primary-700 font-semibold"
                                     >
-                                        {{ $modalidadPago === 'dividida' ? 'Finalizar Pedido' : 'Registrar Pedido' }}
+                                        @if($editando)
+                                            Actualizar Pedido
+                                        @else
+                                            {{ $modalidadPago === 'dividida' ? 'Finalizar Pedido' : 'Registrar Pedido' }}
+                                        @endif
                                     </button>
                                 @endif
 

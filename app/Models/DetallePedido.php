@@ -50,6 +50,8 @@ class DetallePedido extends Model
         return $this->hasOne(PreparacionPlato::class,'idDetallePedido');
     }
 
-
+    public function preparaciones(){
+        return $this->hasMany(PreparacionPlato::class,'idDetallePedido');
+    }
 
 }

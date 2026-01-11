@@ -141,7 +141,107 @@
                         💳 Procesar Pago
                     </h3>
 
-                    <form wire:submit.prevent="confirmarPago" class="space-y-4">
+                    @if($esModalidadDividida)
+                        <!-- MODALIDAD DIVIDIDA: Un formulario por cada comensal -->
+                        <div class="space-y-6">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
+                                <p class="text-sm font-semibold text-blue-900 dark:text-blue-300">
+                                    🔀 Cuenta Dividida
+                                </p>
+                                <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                                    Procese el pago de cada comensal
+                                </p>
+                            </div>
+
+                            @foreach($productosPorComensal as $dni => $data)
+                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white mb-2">
+                                        👤 {{ $data['nombre'] }}
+                                    </h4>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">DNI: {{ $dni }}</p>
+
+                                    <!-- Productos del comensal -->
+                                    <div class="mb-3 p-2 bg-white dark:bg-gray-800 rounded text-xs">
+                                        @foreach($data['productos'] as $detalle)
+                                            <div class="flex justify-between py-1">
+                                                <span>{{ $detalle->cantidadProductoPedido }}x {{ $detalle->descripcionProductoPedido }}</span>
+                                                <span class="font-semibold">S/ {{ number_format($detalle->cantidadProductoPedido * $detalle->precioUnitarioProductoPedido, 2) }}</span>
+                                            </div>
+                                        @endforeach
+                                        <div class="border-t pt-1 mt-1 flex justify-between font-bold text-orange-600 dark:text-orange-400">
+                                            <span>Total:</span>
+                                            <span>S/ {{ number_format($data['total'], 2) }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Método de Pago -->
+                                    <div class="mb-2">
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Método de Pago <span class="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            wire:model.live="pagosPorComensal.{{ $dni }}.idTipoPago"
+                                            class="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm"
+                                        >
+                                            <option value="">Seleccione...</option>
+                                            @foreach($tiposPago as $tipo)
+                                                <option value="{{ $tipo->idTipoPagoPedido }}">
+                                                    {{ $tipo->descripcionTipoPagoPedido }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error("pagosPorComensal.{$dni}.idTipoPago")
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Monto Pagado -->
+                                    <div class="mb-2">
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Monto Recibido <span class="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            wire:model.live="pagosPorComensal.{{ $dni }}.montoPagado"
+                                            class="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm font-semibold"
+                                            placeholder="0.00"
+                                        >
+                                        @error("pagosPorComensal.{$dni}.montoPagado")
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Vuelto -->
+                                    @if(isset($pagosPorComensal[$dni]['vuelto']))
+                                        <div class="p-2 rounded {{ $pagosPorComensal[$dni]['vuelto'] >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30' }}">
+                                            <p class="text-xs {{ $pagosPorComensal[$dni]['vuelto'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                                                {{ $pagosPorComensal[$dni]['vuelto'] >= 0 ? 'Vuelto:' : 'Falta:' }}
+                                                <span class="font-bold">S/ {{ number_format(abs($pagosPorComensal[$dni]['vuelto']), 2) }}</span>
+                                            </p>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+
+                            <!-- Botón de Cobrar Todo -->
+                            <button
+                                type="button"
+                                wire:click="confirmarPago"
+                                class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-lg shadow-lg transition text-lg">
+                                ✓ Confirmar Todos los Pagos
+                            </button>
+
+                            <a
+                                href="{{ route('mozo.index') }}"
+                                wire:navigate
+                                class="block w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white font-semibold rounded-lg text-center transition">
+                                Cancelar
+                            </a>
+                        </div>
+                    @else
+                        <!-- MODALIDAD TOTAL: Un solo formulario -->
+                        <form wire:submit.prevent="confirmarPago" class="space-y-4">
                         <!-- Tipo de Pago -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -251,6 +351,7 @@
                             Cancelar
                         </a>
                     </form>
+                    @endif
                 </x-card>
             </div>
         </div>

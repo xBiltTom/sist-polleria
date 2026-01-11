@@ -14,6 +14,8 @@ class PagoPedido extends Model
         'idPedido',
         'nroPago',
         'monto',
+        'recibido',
+        'vuelto',
         'idTipoPagoPedido',
         'nroOperacion',
         'dniPagante',
@@ -25,6 +27,8 @@ class PagoPedido extends Model
 
     protected $casts = [
         'monto' => 'decimal:2',
+        'recibido' => 'decimal:2',
+        'vuelto' => 'decimal:2',
         'IGV' => 'decimal:2'
     ];
 

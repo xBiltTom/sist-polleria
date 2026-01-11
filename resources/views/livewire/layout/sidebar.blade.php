@@ -254,19 +254,24 @@ new class extends Component
     /**
      * Verifica si el usuario tiene permiso para ver un item del menú.
      */
-    public function canAccess(?string $permission): bool
+    public function canAccess(string $route, ?string $permission): bool
     {
-        if ($permission === null) {
-            return true;
-        }
-
-        // Integración con spatie/laravel-permission
-        // Si el usuario tiene el rol super-admin, tiene acceso a todo
+        // Super admin tiene acceso a todo
         if (auth()->user()->hasRole('super-admin')) {
             return true;
         }
 
-        return auth()->user()->can($permission);
+        // Verificar acceso por ruta usando el sistema dinámico
+        if (!\App\Services\PermissionService::userCanAccessRoute($route)) {
+            return false;
+        }
+
+        // Si además tiene permiso explícito definido, verificarlo también
+        if ($permission !== null) {
+            return auth()->user()->can($permission);
+        }
+
+        return true;
     }
 }; ?>
 
@@ -299,7 +304,7 @@ new class extends Component
                     Luego con el metodo collet convertira $group['items'] en una coleccion de laravel.
                     Se usa el metodo filter el cual va a iterar sobre cada item para comprobar que si tenga el permiso.
                 */
-                $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess($item['permission'] ?? null));
+                $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess($item['route'], $item['permission'] ?? null));
             @endphp
 
             @if($visibleItems->isNotEmpty())

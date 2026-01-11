@@ -5,6 +5,7 @@ namespace App\Livewire\Cocina;
 use App\Models\Pedido;
 use App\Models\PreparacionPlato;
 use App\Traits\WithSweetAlert;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,66 +13,144 @@ class Index extends Component
 {
     use WithPagination, WithSweetAlert;
 
-    protected $listeners = ['cambiarEstado'];
+    protected $listeners = ['cambiarEstado', 'entregarAMozo'];
 
     public function render()
     {
-        // Pedidos en preparación (estado 2)
-        $pedidosEnPreparacion = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido'])
-            ->where('idEstadoPedido', 2) // En Preparación
-            ->orderBy('fechaPedido', 'asc')
-            ->get();
-
-        // Pedidos terminados (estado 3)
-        $pedidosTerminados = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido'])
-            ->where('idEstadoPedido', 3) // Terminado
+        // Pedidos enviados a cocina (estado 2)
+        $pedidosEnCocina = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detalles.preparaciones.estadoPreparacion', 'detalles.preparaciones.cocinero', 'detallesCliente'])
+            ->where('idEstadoPedido', 2) // Enviado a Cocina
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
         return view('livewire.cocina.index', [
-            'pedidosEnPreparacion' => $pedidosEnPreparacion,
-            'pedidosTerminados' => $pedidosTerminados
+            'pedidosEnCocina' => $pedidosEnCocina,
         ])->layout('layouts.dashboard');
     }
 
-    public function marcarTerminado($idPedido)
-    {
-        $this->confirmAlert(
-            title: '¿Marcar como terminado?',
-            text: 'El pedido pasará al estado Terminado',
-            confirmButtonText: 'Sí, marcar',
-            method: 'cambiarEstado',
-            params: ['idPedido' => $idPedido, 'estado' => 3]
-        );
-    }
-
-    public function marcarEntregadoMozo($idPedido)
-    {
-        $this->confirmAlert(
-            title: '¿Entregar a mozo?',
-            text: 'El pedido será marcado como entregado al mozo',
-            confirmButtonText: 'Sí, entregar',
-            method: 'cambiarEstado',
-            params: ['idPedido' => $idPedido, 'estado' => 4]
-        );
-    }
-
-    public function cambiarEstado($idPedido, $estado)
+    public function marcarParaPreparacion($idDetallePedido)
     {
         try {
-            $pedido = Pedido::findOrFail($idPedido);
-            $pedido->update(['idEstadoPedido' => $estado]);
+            // Verificar si ya existe una preparación para este detalle
+            $existePreparacion = PreparacionPlato::where('idDetallePedido', $idDetallePedido)->exists();
 
-            $mensaje = $estado == 3 ? 'Pedido marcado como terminado' : 'Pedido entregado al mozo';
+            if ($existePreparacion) {
+                $this->errorAlert(
+                    title: 'Ya marcado',
+                    text: 'Este producto ya está marcado para preparación'
+                );
+                return;
+            }
+
+            // Crear registro de preparación con estado "En preparación" (1)
+            PreparacionPlato::create([
+                'idDetallePedido' => $idDetallePedido,
+                'idCocinero' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
+                'idEstadoPreparacion' => 1, // En preparación
+            ]);
 
             $this->successAlert(
-                title: '¡Actualizado!',
-                text: $mensaje
+                title: '¡Marcado!',
+                text: 'Producto marcado para preparación'
             );
         } catch (\Exception $e) {
             $this->errorAlert(
                 title: 'Error',
-                text: 'No se pudo actualizar el estado del pedido'
+                text: 'No se pudo marcar el producto: ' . $e->getMessage()
+            );
+        }
+    }
+
+    public function marcarComoTerminado($idPreparacionPlato)
+    {
+        $this->confirmAlert(
+            title: '¿Marcar como terminado?',
+            text: 'El producto será marcado como terminado',
+            confirmButtonText: 'Sí, marcar',
+            method: 'cambiarEstado',
+            params: ['idPreparacionPlato' => $idPreparacionPlato]
+        );
+    }
+
+    public function cambiarEstado($idPreparacionPlato)
+    {
+        try {
+            $preparacion = PreparacionPlato::findOrFail($idPreparacionPlato);
+            $preparacion->update(['idEstadoPreparacion' => 2]); // Terminado
+
+            $this->successAlert(
+                title: '¡Terminado!',
+                text: 'Producto marcado como terminado'
+            );
+        } catch (\Exception $e) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo actualizar el estado'
+            );
+        }
+    }
+
+    public function verificarYEntregar($idPedido)
+    {
+        try {
+            $pedido = Pedido::with(['detalles.preparaciones'])->findOrFail($idPedido);
+
+            // Verificar si hay productos marcados para preparación
+            $hayProductosEnPreparacion = false;
+            foreach ($pedido->detalles as $detalle) {
+                if ($detalle->preparaciones->isNotEmpty()) {
+                    $hayProductosEnPreparacion = true;
+                    break;
+                }
+            }
+
+            // Si hay productos en preparación, verificar que todos estén terminados
+            if ($hayProductosEnPreparacion) {
+                foreach ($pedido->detalles as $detalle) {
+                    if ($detalle->preparaciones->isNotEmpty()) {
+                        foreach ($detalle->preparaciones as $preparacion) {
+                            if ($preparacion->idEstadoPreparacion != 2) {
+                                $this->errorAlert(
+                                    title: 'Preparación incompleta',
+                                    text: 'Debes terminar todos los productos marcados antes de entregar al mozo'
+                                );
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Si todo está OK, confirmar entrega
+            $this->confirmAlert(
+                title: '¿Entregar a mozo?',
+                text: 'El pedido será marcado como listo para el mozo',
+                confirmButtonText: 'Sí, entregar',
+                method: 'entregarAMozo',
+                params: ['idPedido' => $idPedido]
+            );
+        } catch (\Exception $e) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo verificar el pedido'
+            );
+        }
+    }
+
+    public function entregarAMozo($idPedido)
+    {
+        try {
+            $pedido = Pedido::findOrFail($idPedido);
+            $pedido->update(['idEstadoPedido' => 3]); // Entregado a Mozo
+
+            $this->successAlert(
+                title: '¡Entregado!',
+                text: 'Pedido entregado al mozo'
+            );
+        } catch (\Exception $e) {
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo entregar el pedido'
             );
         }
     }

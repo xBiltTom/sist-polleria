@@ -13,7 +13,7 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile'); */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'route.permission'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('profile', 'profile')->name('profile');
 
