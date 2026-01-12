@@ -24,15 +24,36 @@
 
             <div class="space-y-4">
                 @forelse($pedidosEnCocina as $pedido)
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 border-blue-500 p-4">
+                    @php
+                        $esParaLlevar = $pedido->idTipoPedido == 3;
+                        $esDelivery = $pedido->idTipoPedido == 2;
+                        $borderColor = $esParaLlevar ? 'border-green-500' : ($esDelivery ? 'border-orange-500' : 'border-blue-500');
+                        $bgBadge = $esParaLlevar ? 'bg-green-100 text-green-800' : ($esDelivery ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800');
+                    @endphp
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 {{ $borderColor }} p-4">
                         <div class="flex justify-between items-start mb-3">
                             <div>
-                                <h4 class="text-xl font-bold text-gray-900 dark:text-white">
-                                    Pedido #{{ $pedido->idPedido }}
-                                </h4>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-xl font-bold text-gray-900 dark:text-white">
+                                        Pedido #{{ $pedido->idPedido }}
+                                    </h4>
+                                    @if($esParaLlevar)
+                                        <span class="px-2 py-1 text-xs font-bold bg-green-500 text-white rounded-full flex items-center gap-1">
+                                            🛍️ PARA LLEVAR
+                                        </span>
+                                    @elseif($esDelivery)
+                                        <span class="px-2 py-1 text-xs font-bold bg-orange-500 text-white rounded-full flex items-center gap-1">
+                                            🛵 DELIVERY
+                                        </span>
+                                    @endif
+                                </div>
                                 @if($pedido->mesa)
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Mesa: {{ $pedido->mesa->nroMesa }}
+                                    </p>
+                                @elseif($esParaLlevar && $pedido->detallesCliente->first())
+                                    <p class="text-sm text-green-600 dark:text-green-400 font-medium">
+                                        Cliente: {{ $pedido->detallesCliente->first()->nombreCliente }} {{ $pedido->detallesCliente->first()->apellidoCliente }}
                                     </p>
                                 @endif
                             </div>
@@ -40,9 +61,14 @@
                                 <p class="text-xs text-gray-500">
                                     {{ \Carbon\Carbon::parse($pedido->fechaPedido)->format('H:i') }}
                                 </p>
-                                <span class="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                                <span class="inline-block px-2 py-1 text-xs font-semibold {{ $bgBadge }} rounded-full">
                                     En Cocina
                                 </span>
+                                @if($esParaLlevar && $pedido->pagos->isNotEmpty())
+                                    <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                                        ✅ YA COBRADO
+                                    </p>
+                                @endif
                             </div>
                         </div>
 

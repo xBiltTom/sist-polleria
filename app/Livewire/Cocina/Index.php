@@ -18,7 +18,7 @@ class Index extends Component
     public function render()
     {
         // Pedidos enviados a cocina (estado 2)
-        $pedidosEnCocina = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detalles.preparaciones.estadoPreparacion', 'detalles.preparaciones.cocinero', 'detallesCliente'])
+        $pedidosEnCocina = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detalles.preparaciones.estadoPreparacion', 'detalles.preparaciones.cocinero', 'detallesCliente', 'tipoPedido', 'pagos'])
             ->where('idEstadoPedido', 2) // Enviado a Cocina
             ->orderBy('fechaPedido', 'asc')
             ->get();

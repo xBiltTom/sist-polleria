@@ -31,7 +31,7 @@ class Index extends Component
             ->get();
 
         // Pedidos entregados al mozo (estado 3) - Listos para entregar a comensales
-        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido'])
+        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido', 'pagos'])
             ->where('idEstadoPedido', 3) // Entregado a Mozo
             ->where('idMozo', $empleadoId)
             ->orderBy('fechaPedido', 'asc')
@@ -177,7 +177,7 @@ class Index extends Component
     public function entregarParaLlevar($idPedido)
     {
         try {
-            $pedido = Pedido::findOrFail($idPedido);
+            $pedido = Pedido::with('pagos')->findOrFail($idPedido);
 
             // Verificar que sea un pedido para llevar
             if ($pedido->idTipoPedido != 3) {
@@ -188,8 +188,10 @@ class Index extends Component
                 return;
             }
 
-            // Cambiar a estado 5 (Entregado a Comensales/Cliente final)
-            $pedido->update(['idEstadoPedido' => 5]);
+            // Si el pedido ya fue cobrado (tiene pagos), cambiar a estado 7 (Cobrado/Finalizado)
+            // Si no fue cobrado, cambiar a estado 5 (Entregado a Comensales)
+            $nuevoEstado = $pedido->pagos->isNotEmpty() ? 7 : 5;
+            $pedido->update(['idEstadoPedido' => $nuevoEstado]);
 
             $this->successAlert(
                 title: '¡Entregado!',
