@@ -17,6 +17,7 @@ class Producto extends Model
         'precioUnitario',
         'idCategoriaProducto',
         'urlImagenProducto',
+        'idImagenProducto',
         'estadoDB'
     ];
 

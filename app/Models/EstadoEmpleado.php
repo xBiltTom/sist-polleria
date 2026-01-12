@@ -11,6 +11,7 @@ class EstadoEmpleado extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'nombreEstadoEmpleado',
         'descripcionEstadoEmpleado',
         'estadoDB'
     ];

@@ -1,0 +1,390 @@
+<?php
+
+use Livewire\Volt\Component;
+
+new class extends Component
+{
+    /**
+     * Menu items del sidebar.
+     * Estructura para facilitar la gestión de permisos.
+     */
+    public function getMenuItems(): array
+    {
+        return [
+            [
+                'group' => 'Principal',
+                'items' => [
+                    [
+                        'name' => 'Dashboard',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Catálogo Web',
+                        'route' => 'catalogo.index',
+                        'icon' => 'shopping-cart',
+                        'permission' => null,
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Pedidos',
+                'items' => [
+                    [
+                        'name' => 'Historial de Pedidos',
+                        'route' => 'pedidos.historial',
+                        'icon' => 'chart-bar',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Pedidos en Salón',
+                        'route' => 'pedidos.salon.index',
+                        'icon' => 'clipboard-list',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Pedidos Delivery',
+                        'route' => 'pedidos.delivery.index',
+                        'icon' => 'truck',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Pedidos Para Llevar',
+                        'route' => 'pedidos.para-llevar.index',
+                        'icon' => 'shopping-bag',
+                        'permission' => 'ver-pedidos',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Operaciones',
+                'items' => [
+                    [
+                        'name' => 'Vista de Cocina',
+                        'route' => 'cocina.index',
+                        'icon' => 'fire',
+                        'permission' => 'ver-cocina',
+                    ],
+                    [
+                        'name' => 'Vista de Mozo',
+                        'route' => 'mozo.index',
+                        'icon' => 'user-circle',
+                        'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Validar Pagos',
+                        'route' => 'cajero.validar-pagos',
+                        'icon' => 'currency-dollar',
+                        'permission' => 'validar-pagos',
+                    ],
+                    [
+                        'name' => 'Mis Entregas',
+                        'route' => 'agente-pedidos.mis-pedidos',
+                        'icon' => 'truck',
+                        'permission' => null, // Visible para agentes (filtrado por tipo de empleado)
+                        'tipo_empleado' => 6, // Solo Agente de Pedidos
+                    ],
+                    [
+                        'name' => 'Mesas',
+                        'route' => 'mesas.index',
+                        'icon' => 'table-cells',
+                        'permission' => 'ver-mesas',
+                    ],
+                    [
+                        'name' => 'Clientes',
+                        'route' => 'clientes.index',
+                        'icon' => 'users',
+                        'permission' => 'ver-clientes',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Inventario',
+                'items' => [
+                    [
+                        'name' => 'Productos',
+                        'route' => 'productos.index',
+                        'icon' => 'cube',
+                        'permission' => 'ver-productos',
+                    ],
+                    [
+                        'name' => 'Insumos',
+                        'route' => 'insumo.index',
+                        'icon' => 'archive-box',
+                        'permission' => 'ver-insumos',
+                    ],
+                    [
+                        'name' => 'Almacén',
+                        'route' => 'operacion-almacen.index', // Cambiar por la ruta real
+                        'icon' => 'building-storefront',
+                        'permission' => 'ver-almacen',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Compras',
+                'items' => [
+                    [
+                        'name' => 'Proveedores',
+                        'route' => 'proveedor.index',
+                        'icon' => 'truck',
+                        'permission' => 'ver-proveedores',
+                    ],
+                    [
+                        'name' => 'Órdenes de Abastecimiento',
+                        'route' => 'orden-abastecimiento.index', // Cambiar por la ruta real
+                        'icon' => 'shopping-cart',
+                        'permission' => 'ver-ordenes-compra',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Personal',
+                'items' => [
+                    [
+                        'name' => 'Empleados',
+                        'route' => 'empleados.index',
+                        'icon' => 'user-group',
+                        'permission' => 'ver-empleados',
+                    ],
+                    [
+                        'name' => 'Contactos de Proveedores',
+                        'route' => 'contacto-proveedor.index',
+                        'icon' => 'phone-book',
+                        'permission' => 'ver-contactos-proveedor',
+                    ]
+                ],
+            ],
+            [
+                'group' => 'Configuración',
+                'items' => [
+                    [
+                        'name' => 'Usuarios',
+                        'route' => 'usuarios.index',
+                        'icon' => 'users',
+                        'permission' => 'ver-usuarios',
+                    ],
+                    [
+                        'name' => 'Roles y Permisos',
+                        'route' => 'roles.index',
+                        'icon' => 'shield-check',
+                        'permission' => 'ver-roles',
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Modelos de Estado',
+                'items' => [
+                    [
+                        'name' => 'Estado Empleado',
+                        'route' => 'estado-empleado.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    /* [
+                        'name' => 'Estado Cliente',
+                        'route' => 'dashboard',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ], */
+                    [
+                        'name' => 'Estado Pedido',
+                        'route' => 'estados-pedido.index',
+                        'icon' => 'clipboard-document-check',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado de Mesa',
+                        'route' => 'estados-mesa.index',
+                        'icon' => 'check-circle',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Preparacion',
+                        'route' => 'estado-preparacion.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Estado Proveedor',
+                        'route' => 'estado-proveedor.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                ],
+            ],
+            [
+                'group' => 'Modelos Catálogo',
+                'items' => [
+                    [
+                        'name' => 'Categoría Producto',
+                        'route' => 'categorias.index',
+                        'icon' => 'folder',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Cliente',
+                        'route' => 'tipos-cliente.index',
+                        'icon' => 'user-circle',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Empleado',
+                        'route' => 'tipo-empleado.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo Comprobante',
+                        'route' => 'tipo-comprobante.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    /* [
+                        'name' => 'Tipo de Pago Pedido',
+                        'route' => 'tipos-pago-pedido.index',
+                        'icon' => 'credit-card',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ], */
+                    [
+                        'name' => 'Tipo de Operacion en Almacen',
+                        'route' => 'tipo-operacion-almacen.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Modalidad de pago en pedido',
+                        'route' => 'modalidad-pago-pedido.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                    [
+                        'name' => 'Tipo de pago en pedido',
+                        'route' => 'tipo-pago-pedido.index',
+                        'icon' => 'home',
+                        'permission' => null, // Accesible para todos los autenticados
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Verifica si el usuario tiene permiso para ver un item del menú.
+     */
+    public function canAccess(string $route, ?string $permission, ?int $tipoEmpleado = null): bool
+    {
+        // Super admin tiene acceso a todo
+        if (auth()->user()->hasRole('super-admin')) {
+            return true;
+        }
+
+        // Si se especifica tipo de empleado, verificar que coincida
+        if ($tipoEmpleado !== null) {
+            $empleado = auth()->user()->empleado;
+            if (!$empleado || $empleado->idTipoEmpleado !== $tipoEmpleado) {
+                return false;
+            }
+        }
+
+        // Verificar acceso por ruta usando el sistema dinámico
+        if (!\App\Services\PermissionService::userCanAccessRoute($route)) {
+            return false;
+        }
+
+        // Si además tiene permiso explícito definido, verificarlo también
+        if ($permission !== null) {
+            return auth()->user()->can($permission);
+        }
+
+        return true;
+    }
+}; ?>
+
+<aside
+    x-data
+    :class="{
+        'translate-x-0': sidebarMobileOpen,
+        '-translate-x-full': !sidebarMobileOpen,
+        'lg:translate-x-0': sidebarOpen,
+        'lg:-translate-x-full': !sidebarOpen
+    }"
+    class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-polleria-dark-900 border-r border-gray-200 dark:border-polleria-dark-800 transform transition-transform duration-300 ease-in-out flex flex-col"
+>
+    <!-- Logo y nombre de la app -->
+    <div class="flex-shrink-0 flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-polleria-dark-800 bg-polleria-500 dark:bg-polleria-dark-900">
+        <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center space-x-3">
+            <!-- Icono de pollo/pollería -->
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <span class="text-xl font-bold text-white">Don Pollón</span>
+        </a>
+    </div>
+
+    <!-- Navigation Menu con scroll propio -->
+    <nav class="flex-1 overflow-y-auto py-4 px-3">
+        @foreach($this->getMenuItems() as $group)
+            @php
+                $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess(
+                    $item['route'], 
+                    $item['permission'] ?? null,
+                    $item['tipo_empleado'] ?? null
+                ));
+            @endphp
+
+            @if($visibleItems->isNotEmpty())
+                <div class="mb-6">
+                    <h3 class="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        {{ $group['group'] }}
+                    </h3>
+                    <ul class="space-y-1">
+                        @foreach($visibleItems as $item)
+                            <li>
+                                <a
+                                    href="{{ route($item['route']) }}"
+                                    wire:navigate
+                                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200
+                                        {{ request()->routeIs($item['route'])
+                                            ? 'bg-polleria-100 text-polleria-700 dark:bg-polleria-dark-800 dark:text-polleria-dark-300'
+                                            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-polleria-dark-800' }}"
+                                >
+                                    <x-sidebar-icon :icon="$item['icon']" class="w-5 h-5 mr-3" />
+                                    {{ $item['name'] }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        @endforeach
+    </nav>
+
+    <!-- User Info at Bottom (fijo abajo) -->
+    <div class="flex-shrink-0 border-t border-gray-200 dark:border-polleria-dark-800 p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                @if(auth()->user()->empleado?->urlFotoEmpleado)
+                    <img
+                        src="{{ auth()->user()->empleado->urlFotoEmpleado }}"
+                        alt="{{ auth()->user()->name }}"
+                        class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+                    >
+                @else
+                    <div class="w-10 h-10 rounded-full bg-polleria-500 dark:bg-polleria-dark-600 flex items-center justify-center text-white font-semibold">
+                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                    </div>
+                @endif
+            </div>
+            <div class="ml-3 min-w-0 flex-1">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {{ auth()->user()->name ?? 'Usuario' }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {{ auth()->user()->email ?? '' }}
+                </p>
+            </div>
+        </div>
+    </div>
+</aside>

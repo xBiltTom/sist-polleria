@@ -14,11 +14,14 @@ class Insumo extends Model
         'nombreInsumo',
         'descripcionInsumo',
         'precioUnitarioInsumo',
-        'imagenInsumo'
+        'imagenInsumo',
+        'idImagenInsumo',
+        'estadoDB'
     ];
 
     protected $casts = [
-        'precioUnitarioInsumo' => 'decimal:2'
+        'precioUnitarioInsumo' => 'decimal:2',
+        'estadoDB' => 'boolean'
     ];
 
     public function listaAbastecimiento()

@@ -8,7 +8,6 @@ class Empleado extends Model
 {
     protected $table = 'empleado';
     protected $primaryKey = 'idEmpleado';
-    public $timestamps = false;
 
     protected $fillable = [
         'nombreEmpleado',
@@ -20,6 +19,7 @@ class Empleado extends Model
         'estadoDB',
         'idTipoEmpleado',
         'urlFotoEmpleado',
+        'idFotoEmpleado',
         'idEstadoEmpleado'
     ];
 
