@@ -143,7 +143,7 @@
                 <div class="bg-purple-100 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4 mb-4 rounded">
                     <h3 class="text-lg font-bold text-purple-900 dark:text-purple-300 flex items-center gap-2">
                         <x-sidebar-icon icon="clipboard-list" class="w-5 h-5" />
-                        Listos para Entregar a Comensales ({{ $pedidosParaEntregar->count() }})
+                        Listos para Entregar ({{ $pedidosParaEntregar->count() }})
                     </h3>
                 </div>
 
@@ -156,7 +156,25 @@
                                     <h4 class="text-xl font-bold text-gray-900 dark:text-white">
                                         Pedido #{{ $pedido->idPedido }}
                                     </h4>
-                                    @if($pedido->mesa)
+
+                                    @if($pedido->idTipoPedido == 3)
+                                        <!-- Para Llevar -->
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                                            </svg>
+                                            <p class="text-sm font-semibold text-green-700 dark:text-green-400">
+                                                PARA LLEVAR
+                                            </p>
+                                        </div>
+                                        @if($pedido->detallesCliente->isNotEmpty())
+                                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                {{ $pedido->detallesCliente->first()->nombreCliente }}
+                                                {{ $pedido->detallesCliente->first()->apellidoCliente }}
+                                            </p>
+                                        @endif
+                                    @elseif($pedido->mesa)
+                                        <!-- En Salón -->
                                         <div class="flex items-center gap-2 mt-1">
                                             <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
                                                 <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
@@ -190,16 +208,13 @@
                                 </ul>
                             </div>
 
-                            <!-- Cliente(s) -->
-                            @if($pedido->detallesCliente->isNotEmpty())
+                            <!-- Cliente(s) - Solo para pedidos en salón con múltiples clientes -->
+                            @if($pedido->idTipoPedido != 3 && $pedido->detallesCliente->isNotEmpty() && $pedido->detallesCliente->count() > 1)
                                 <div class="text-xs text-gray-600 dark:text-gray-400 mb-3 border-t pt-2 dark:border-gray-600">
-                                    <p><strong>{{ $pedido->detallesCliente->count() > 1 ? 'Clientes:' : 'Cliente:' }}</strong></p>
+                                    <p><strong>Clientes:</strong></p>
                                     @foreach($pedido->detallesCliente as $cliente)
                                         <p class="ml-2">
                                             • {{ $cliente->nombreCliente }} {{ $cliente->apellidoCliente }}
-                                            @if($cliente->idTipoCliente == 2)
-                                                <span class="text-purple-600 dark:text-purple-400">({{ $cliente->razonSocial }})</span>
-                                            @endif
                                         </p>
                                     @endforeach
                                 </div>
@@ -212,13 +227,24 @@
                                 </p>
                             </div>
 
-                            <!-- Botón Entregar a Comensales -->
-                            <button
-                                wire:click="marcarEntregadoComensales({{ $pedido->idPedido }})"
-                                class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
-                                <x-sidebar-icon icon="check-circle" class="w-5 h-5" />
-                                Entregar a Comensales
-                            </button>
+                            <!-- Botón Entregar -->
+                            @if($pedido->idTipoPedido == 3)
+                                <!-- Pedido Para Llevar (ya cobrado) -->
+                                <button
+                                    wire:click="entregarPedidoParaLlevar({{ $pedido->idPedido }})"
+                                    class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                                    <x-sidebar-icon icon="check-circle" class="w-5 h-5" />
+                                    Entregar al Cliente
+                                </button>
+                            @else
+                                <!-- Pedido en Salón -->
+                                <button
+                                    wire:click="marcarEntregadoComensales({{ $pedido->idPedido }})"
+                                    class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                                    <x-sidebar-icon icon="check-circle" class="w-5 h-5" />
+                                    Entregar a Comensales
+                                </button>
+                            @endif
                         </div>
                     @empty
                         <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center col-span-full">

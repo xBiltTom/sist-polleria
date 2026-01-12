@@ -2,10 +2,9 @@
 
 namespace App\Livewire\Pedidos;
 
-use App\Models\{CategoriaProducto, Producto, Pedido, DetallePedido, DetalleCliente, Empleado, TipoCliente, ModalidadPagoPedido};
+use App\Models\{CategoriaProducto, Producto, Pedido, DetallePedido, DetalleCliente, ClienteRegistrado, TipoCliente};
 use App\Traits\WithSweetAlert;
 use Livewire\Component;
-use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 
 class ParaLlevarCreate extends Component
@@ -22,408 +21,346 @@ class ParaLlevarCreate extends Component
     const ESTADO_COBRADO = 7;
     const ESTADO_CANCELADO = 8;
 
+    // Steps del proceso
+    public $step = 1;
+
     // Datos del cliente
     public $nombreCliente = '';
     public $apellidoCliente = '';
     public $tipoPersona = 'natural';
     public $documento = '';
+    public $dniRepresentante = ''; // DNI del representante para persona jurídica
     public $razonSocial = '';
     public $celular = '';
-    public $direccionCliente = '';
+    public $direccion = '';
 
-    public $currentStep = 1;
+    // Productos
     public $productosSeleccionados = [];
-    public $clientes = [];
-    public $tiposCliente;
-    public $idModalidadPago = 1; // Total por defecto
-    public $modalidadesPago;
-    public $categorias;
+    public $cantidades = [];
+    public $categorias = [];
     public $productos = [];
-    public $searchProducto = '';
+    public $busqueda = '';
+    public $categoriaFiltro = '';
 
     // Específico para para llevar
     public $numeroOrden;
     public $observacionesOrden = '';
     public $horaRecojo;
 
-    // Para modalidad dividida
-    public $clienteActivoIndex = null;
-    public $productosPorCliente = [];
+    protected $listeners = ['registrarPedido'];
 
     public function mount()
     {
-        $this->tiposCliente = TipoCliente::all();
-        $this->modalidadesPago = ModalidadPagoPedido::all();
-        $this->categorias = CategoriaProducto::all();
-        $this->productos = Producto::with('categoria')->get();
+        $this->categorias = CategoriaProducto::where('estadoDB', 1)
+            ->where('vendibles', 1)
+            ->orderBy('nombreCategoriaProducto')
+            ->get();
 
         // Generar número de orden automático
         $ultimoPedido = Pedido::where('idTipoPedido', 3)
             ->whereDate('fechaPedido', today())
             ->count();
-        $this->numeroOrden = 'PLL-' . str_pad($ultimoPedido + 1, 4, '0', STR_PAD_LEFT);
+        $this->numeroOrden = 'PLL-' . date('Ymd') . '-' . str_pad($ultimoPedido + 1, 4, '0', STR_PAD_LEFT);
+
+        // Hora de recojo por defecto (1 hora desde ahora)
+        $this->horaRecojo = now()->addHour()->format('H:i');
     }
 
-    public function agregarCliente()
+    public function rules()
     {
-        $this->validate([
-            'nombreCliente' => 'required|string|max:100',
-            'apellidoCliente' => 'required|string|max:100',
-            'documento' => $this->tipoPersona === 'natural' ? 'required|digits:8' : 'required|digits:11',
-            'razonSocial' => $this->tipoPersona === 'juridica' ? 'required|string|max:200' : 'nullable',
-        ]);
+        if ($this->step === 1) {
+            $rules = [
+                'nombreCliente' => 'required|string|max:255',
+                'apellidoCliente' => 'required|string|max:255',
+                'tipoPersona' => 'required|in:natural,juridica',
+                'celular' => 'required|string|max:20',
+                'direccion' => 'required|string|max:255',
+            ];
 
-        $this->clientes[] = [
-            'nombre' => $this->nombreCliente,
-            'apellido' => $this->apellidoCliente,
-            'tipoPersona' => $this->tipoPersona,
-            'dni' => $this->tipoPersona === 'natural' ? $this->documento : null,
-            'ruc' => $this->tipoPersona === 'juridica' ? $this->documento : null,
-            'razonSocial' => $this->razonSocial,
-            'celular' => $this->celular,
-            'direccion' => $this->direccionCliente,
+            if ($this->tipoPersona === 'natural') {
+                $rules['documento'] = 'required|digits:8';
+            } else {
+                $rules['documento'] = 'required|digits:11';
+                $rules['dniRepresentante'] = 'required|digits:8';
+                $rules['razonSocial'] = 'required|string|max:255';
+            }
+
+            return $rules;
+        }
+
+        if ($this->step === 3) {
+            return [
+                'horaRecojo' => 'required',
+                'observacionesOrden' => 'nullable|string|max:500',
+            ];
+        }
+
+        return [];
+    }
+
+    public function messages()
+    {
+        return [
+            'nombreCliente.required' => 'El nombre es obligatorio',
+            'apellidoCliente.required' => 'El apellido es obligatorio',
+            'documento.required' => 'El documento es obligatorio',
+            'documento.digits' => $this->tipoPersona === 'natural' ? 'El DNI debe tener 8 dígitos' : 'El RUC debe tener 11 dígitos',
+            'dniRepresentante.required' => 'El DNI del representante es obligatorio',
+            'dniRepresentante.digits' => 'El DNI debe tener 8 dígitos',
+            'razonSocial.required' => 'La razón social es obligatoria para personas jurídicas',
+            'celular.required' => 'El celular es obligatorio para contactar al cliente',
+            'direccion.required' => 'La dirección es obligatoria',
+            'horaRecojo.required' => 'Debe especificar la hora de recojo',
         ];
-
-        // Para modalidad dividida, inicializar el array de productos
-        if ($this->idModalidadPago == 2) {
-            $this->productosPorCliente[count($this->clientes) - 1] = [];
-        }
-
-        // Reset form
-        $this->reset(['nombreCliente', 'apellidoCliente', 'documento', 'razonSocial', 'celular', 'direccionCliente']);
-        $this->showToast('Cliente agregado correctamente', 'success');
-    }
-
-    public function eliminarCliente($index)
-    {
-        array_splice($this->clientes, $index, 1);
-        if ($this->idModalidadPago == 2) {
-            unset($this->productosPorCliente[$index]);
-            $this->productosPorCliente = array_values($this->productosPorCliente);
-        }
-        $this->showToast('Cliente eliminado', 'success');
-    }
-
-    public function seleccionarClienteActivo($index)
-    {
-        $this->clienteActivoIndex = $index;
-        $this->showToast('Cliente seleccionado para agregar productos', 'info');
-    }
-
-    public function continuarModalidadDividida()
-    {
-        if (empty($this->clientes)) {
-            $this->showToast('Debe agregar al menos un cliente', 'error');
-            return;
-        }
-        $this->currentStep = 2;
-    }
-
-    public function agregarProducto($idProducto)
-    {
-        $producto = Producto::findOrFail($idProducto);
-
-        if ($producto->stockProducto <= 0) {
-            $this->showToast('Producto sin stock disponible', 'error');
-            return;
-        }
-
-        // Si es modalidad dividida y hay cliente activo, agregar al cliente
-        if ($this->idModalidadPago == 2 && $this->clienteActivoIndex !== null) {
-            $productoExistente = collect($this->productosPorCliente[$this->clienteActivoIndex])->firstWhere('id', $idProducto);
-
-            if ($productoExistente) {
-                foreach ($this->productosPorCliente[$this->clienteActivoIndex] as &$prod) {
-                    if ($prod['id'] == $idProducto) {
-                        if ($prod['cantidad'] < $producto->stockProducto) {
-                            $prod['cantidad']++;
-                            $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                        } else {
-                            $this->showToast('Stock insuficiente', 'error');
-                            return;
-                        }
-                    }
-                }
-            } else {
-                $this->productosPorCliente[$this->clienteActivoIndex][] = [
-                    'id' => $producto->idProducto,
-                    'nombre' => $producto->nombreProducto,
-                    'precio' => $producto->precioProducto,
-                    'cantidad' => 1,
-                    'subtotal' => $producto->precioProducto,
-                    'stock' => $producto->stockProducto,
-                ];
-            }
-        } else {
-            // Modalidad total o sin cliente seleccionado
-            $productoExistente = collect($this->productosSeleccionados)->firstWhere('id', $idProducto);
-
-            if ($productoExistente) {
-                foreach ($this->productosSeleccionados as &$prod) {
-                    if ($prod['id'] == $idProducto) {
-                        if ($prod['cantidad'] < $producto->stockProducto) {
-                            $prod['cantidad']++;
-                            $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                        } else {
-                            $this->showToast('Stock insuficiente', 'error');
-                            return;
-                        }
-                    }
-                }
-            } else {
-                $this->productosSeleccionados[] = [
-                    'id' => $producto->idProducto,
-                    'nombre' => $producto->nombreProducto,
-                    'precio' => $producto->precioProducto,
-                    'cantidad' => 1,
-                    'subtotal' => $producto->precioProducto,
-                    'stock' => $producto->stockProducto,
-                ];
-            }
-        }
-
-        $this->showToast('Producto agregado', 'success');
-    }
-
-    public function eliminarProductoSeleccionado($idProducto, $clienteIndex = null)
-    {
-        if ($clienteIndex !== null) {
-            $this->productosPorCliente[$clienteIndex] = array_filter(
-                $this->productosPorCliente[$clienteIndex],
-                fn($prod) => $prod['id'] != $idProducto
-            );
-            $this->productosPorCliente[$clienteIndex] = array_values($this->productosPorCliente[$clienteIndex]);
-        } else {
-            $this->productosSeleccionados = array_filter(
-                $this->productosSeleccionados,
-                fn($prod) => $prod['id'] != $idProducto
-            );
-            $this->productosSeleccionados = array_values($this->productosSeleccionados);
-        }
-
-        $this->showToast('Producto eliminado', 'success');
-    }
-
-    public function disminuirCantidad($idProducto, $clienteIndex = null)
-    {
-        if ($clienteIndex !== null) {
-            foreach ($this->productosPorCliente[$clienteIndex] as &$prod) {
-                if ($prod['id'] == $idProducto && $prod['cantidad'] > 1) {
-                    $prod['cantidad']--;
-                    $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                }
-            }
-        } else {
-            foreach ($this->productosSeleccionados as &$prod) {
-                if ($prod['id'] == $idProducto && $prod['cantidad'] > 1) {
-                    $prod['cantidad']--;
-                    $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                }
-            }
-        }
-    }
-
-    public function aumentarCantidad($idProducto, $clienteIndex = null)
-    {
-        if ($clienteIndex !== null) {
-            foreach ($this->productosPorCliente[$clienteIndex] as &$prod) {
-                if ($prod['id'] == $idProducto && $prod['cantidad'] < $prod['stock']) {
-                    $prod['cantidad']++;
-                    $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                } elseif ($prod['id'] == $idProducto) {
-                    $this->showToast('Stock insuficiente', 'error');
-                }
-            }
-        } else {
-            foreach ($this->productosSeleccionados as &$prod) {
-                if ($prod['id'] == $idProducto && $prod['cantidad'] < $prod['stock']) {
-                    $prod['cantidad']++;
-                    $prod['subtotal'] = $prod['cantidad'] * $prod['precio'];
-                } elseif ($prod['id'] == $idProducto) {
-                    $this->showToast('Stock insuficiente', 'error');
-                }
-            }
-        }
     }
 
     public function siguienteStep()
     {
-        if ($this->currentStep == 1) {
-            if ($this->idModalidadPago == 2) {
-                if (empty($this->clientes)) {
-                    $this->showToast('Debe agregar al menos un cliente', 'error');
-                    return;
-                }
+        if ($this->step === 1) {
+            $this->validate();
+            $this->step = 2;
+            $this->cargarProductos();
+        } elseif ($this->step === 2) {
+            if (empty($this->productosSeleccionados)) {
+                session()->flash('error', 'Debe agregar al menos un producto al pedido');
+                return;
             }
-            $this->currentStep++;
-        } elseif ($this->currentStep == 2) {
-            if ($this->idModalidadPago == 1) {
-                if (empty($this->productosSeleccionados)) {
-                    $this->showToast('Debe seleccionar al menos un producto', 'error');
-                    return;
-                }
-                $this->currentStep++;
-            } else {
-                // Modalidad dividida: permanece en step 2
-                $this->showToast('Asigne productos a cada cliente y luego presione "Finalizar Pedido"', 'info');
-            }
-        } elseif ($this->currentStep == 3) {
-            $this->registrarPedido();
+            $this->step = 3;
+        } elseif ($this->step === 3) {
+            $this->validate();
+            $this->confirmarRegistroPedido();
         }
     }
 
     public function anteriorStep()
     {
-        if ($this->currentStep > 1) {
-            $this->currentStep--;
+        if ($this->step > 1) {
+            $this->step--;
         }
+    }
+
+    public function cargarProductos()
+    {
+        $this->productos = Producto::with('categoria')
+            ->where('estadoDB', 1)
+            ->whereHas('categoria', function($q) {
+                $q->where('vendibles', 1);
+            })
+            ->where('stockProducto', '>', 0)
+            ->when($this->busqueda, fn($q) => $q->where('nombreProducto', 'like', "%{$this->busqueda}%"))
+            ->when($this->categoriaFiltro, fn($q) => $q->where('idCategoriaProducto', $this->categoriaFiltro))
+            ->get();
+    }
+
+    public function updatedBusqueda()
+    {
+        $this->cargarProductos();
+    }
+
+    public function updatedCategoriaFiltro()
+    {
+        $this->cargarProductos();
+    }
+
+    public function incrementarCantidad($idProducto)
+    {
+        if (!isset($this->cantidades[$idProducto])) {
+            $this->cantidades[$idProducto] = 0;
+        }
+
+        $producto = Producto::find($idProducto);
+
+        if ($this->cantidades[$idProducto] < $producto->stockProducto) {
+            $this->cantidades[$idProducto]++;
+        }
+    }
+
+    public function decrementarCantidad($idProducto)
+    {
+        if (!isset($this->cantidades[$idProducto])) {
+            $this->cantidades[$idProducto] = 0;
+        }
+
+        if ($this->cantidades[$idProducto] > 0) {
+            $this->cantidades[$idProducto]--;
+        }
+    }
+
+    public function agregarProducto($idProducto)
+    {
+        try {
+            $cantidad = $this->cantidades[$idProducto] ?? 0;
+
+            if ($cantidad <= 0) {
+                session()->flash('error', 'La cantidad debe ser mayor a 0');
+                return;
+            }
+
+            $producto = Producto::find($idProducto);
+
+            if (!$producto) {
+                session()->flash('error', 'Producto no encontrado');
+                return;
+            }
+
+            if ($cantidad > $producto->stockProducto) {
+                session()->flash('error', "Solo hay {$producto->stockProducto} unidades disponibles");
+                return;
+            }
+
+            if (isset($this->productosSeleccionados[$idProducto])) {
+                $this->productosSeleccionados[$idProducto]['cantidad'] += $cantidad;
+                $this->productosSeleccionados[$idProducto]['subtotal'] =
+                    $this->productosSeleccionados[$idProducto]['cantidad'] * $producto->precioUnitario;
+            } else {
+                $this->productosSeleccionados[$idProducto] = [
+                    'producto' => $producto,
+                    'cantidad' => $cantidad,
+                    'precio' => $producto->precioUnitario,
+                    'subtotal' => $producto->precioUnitario * $cantidad
+                ];
+            }
+
+            // Resetear la cantidad a 0
+            $this->cantidades[$idProducto] = 0;
+
+            session()->flash('success', "{$producto->nombreProducto} agregado al pedido");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al agregar producto: ' . $e->getMessage());
+        }
+    }
+
+    public function eliminarProductoSeleccionado($idProducto)
+    {
+        unset($this->productosSeleccionados[$idProducto]);
+        session()->flash('success', 'Producto eliminado del pedido');
     }
 
     public function getMontoTotalProperty()
     {
-        if ($this->idModalidadPago == 2) {
-            $total = 0;
-            foreach ($this->productosPorCliente as $productos) {
-                $total += collect($productos)->sum('subtotal');
-            }
-            return $total;
-        }
         return collect($this->productosSeleccionados)->sum('subtotal');
+    }
+
+    public function getTotalItemsProperty()
+    {
+        return collect($this->productosSeleccionados)->sum('cantidad');
+    }
+
+    public function confirmarRegistroPedido()
+    {
+        $this->confirmAlert(
+            title: '¿Registrar pedido para llevar?',
+            text: "Total: S/ " . number_format($this->montoTotal, 2) . " - El pedido será enviado a cocina",
+            confirmButtonText: 'Sí, registrar',
+            method: 'registrarPedido'
+        );
     }
 
     public function registrarPedido()
     {
-        if ($this->idModalidadPago == 2) {
-            $this->registrarPedidoDividido();
-        } else {
-            $this->registrarPedidoTotal();
+        if (empty($this->productosSeleccionados)) {
+            $this->errorAlert(title: 'Error', text: 'Debe agregar al menos un producto');
+            return;
         }
-    }
 
-    private function registrarPedidoTotal()
-    {
         try {
-            DB::beginTransaction();
+            $pedidoId = DB::transaction(function () {
+                // Determinar ID de tipo de cliente: 1 = Natural, 2 = Jurídica
+                $idTipoCliente = $this->tipoPersona === 'natural' ? 1 : 2;
 
-            $mozo = auth()->user()->empleado;
+                // 1. Crear el pedido
+                $pedido = Pedido::create([
+                    'idMesa' => null, // No hay mesa en para llevar
+                    'idModalidadPagoPedido' => 1, // Siempre pago total
+                    'idEstadoPedido' => self::ESTADO_EN_PREPARACION, // Enviar directo a cocina
+                    'costoPedido' => $this->montoTotal,
+                    'fechaPedido' => now(),
+                    'idMozo' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
+                    'idTipoPedido' => 3, // 3 = Para Llevar
+                ]);
 
-            $pedido = Pedido::create([
-                'idMesa' => null, // Sin mesa para para llevar
-                'idTipoPedido' => 3, // Para llevar
-                'costoPedido' => $this->montoTotal,
-                'idMozo' => $mozo->idEmpleado,
-                'fechaPedido' => now(),
-                'idModalidadPagoPedido' => $this->idModalidadPago,
-                'idEstadoPedido' => self::ESTADO_EN_PREPARACION,
-            ]);
+                // 2. Registrar cliente
+                $clienteData = [
+                    'nombre' => $this->nombreCliente,
+                    'apellido' => $this->apellidoCliente,
+                    'idTipoCliente' => $idTipoCliente,
+                    'dni' => $this->tipoPersona === 'natural' ? $this->documento : $this->dniRepresentante,
+                    'ruc' => $this->tipoPersona === 'juridica' ? $this->documento : null,
+                    'celular' => $this->celular,
+                    'direccion' => $this->direccion,
+                    'razonSocial' => $this->tipoPersona === 'juridica' ? $this->razonSocial : null,
+                ];
 
-            // Guardar cliente
-            if (!empty($this->clientes)) {
-                $cliente = $this->clientes[0];
+                // Guardar en detalle_clientes
                 DetalleCliente::create([
                     'idPedido' => $pedido->idPedido,
-                    'dniCliente' => $cliente['dni'],
-                    'nombreCliente' => $cliente['nombre'],
-                    'apellidoCliente' => $cliente['apellido'],
-                    'idTipoCliente' => $cliente['tipoCliente'],
-                    'razonSocial' => $cliente['razonSocial'],
-                    'celularCliente' => $cliente['celular'],
-                    'direccion' => $cliente['direccion'],
-                    'RUC' => $cliente['ruc'],
-                ]);
-            }
-
-            // Guardar productos
-            foreach ($this->productosSeleccionados as $prod) {
-                DetallePedido::create([
-                    'idPedido' => $pedido->idPedido,
-                    'idProducto' => $prod['id'],
-                    'cantidadProductoPedido' => $prod['cantidad'],
-                    'precioUnitarioProductoPedido' => $prod['precio'],
-                    'descripcionProductoPedido' => $prod['nombre'],
-                    'observacionProductoPedido' => $this->observacionesOrden,
+                    'nombreCliente' => $clienteData['nombre'],
+                    'apellidoCliente' => $clienteData['apellido'],
+                    'idTipoCliente' => $clienteData['idTipoCliente'],
+                    'dniCliente' => $clienteData['dni'],
+                    'RUC' => $clienteData['ruc'],
+                    'celularCliente' => $clienteData['celular'],
+                    'direccion' => $clienteData['direccion'],
+                    'razonSocial' => $clienteData['razonSocial'],
                 ]);
 
-                // Actualizar stock
-                $producto = Producto::find($prod['id']);
-                $producto->stockProducto -= $prod['cantidad'];
-                $producto->save();
-            }
+                // Guardar en clientes_registrados (solo si no existe)
+                ClienteRegistrado::firstOrCreate(
+                    [
+                        'dniCliente' => $clienteData['dni'],
+                        'RUC' => $clienteData['ruc'],
+                    ],
+                    [
+                        'nombreCliente' => $clienteData['nombre'],
+                        'apellidoCliente' => $clienteData['apellido'],
+                        'idTipoCliente' => $clienteData['idTipoCliente'],
+                        'RUC' => $clienteData['ruc'],
+                        'dniCliente' => $clienteData['dni'],
+                        'celularCliente' => $clienteData['celular'],
+                        'direccionCliente' => $clienteData['direccion'],
+                        'razonSocial' => $clienteData['razonSocial'],
+                        'estadoCliente' => 1,
+                        'estadoDB' => 1,
+                    ]
+                );
 
-            DB::commit();
+                // 3. Registrar productos
+                foreach ($this->productosSeleccionados as $idProducto => $item) {
+                    DetallePedido::create([
+                        'idPedido' => $pedido->idPedido,
+                        'idProducto' => $idProducto,
+                        'cantidadProductoPedido' => $item['cantidad'],
+                        'precioUnitarioProductoPedido' => $item['precio'],
+                        'dniPidente' => $clienteData['dni'] ?? $clienteData['ruc'],
+                        'descripcionProductoPedido' => $item['producto']->nombreProducto,
+                    ]);
 
-            $this->showSuccessAlert("Pedido para llevar registrado correctamente.\nNúmero de orden: {$this->numeroOrden}", route('pedidos.para-llevar.index'));
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $this->showToast('Error al registrar el pedido: ' . $e->getMessage(), 'error');
-        }
-    }
-
-    private function registrarPedidoDividido()
-    {
-        try {
-            DB::beginTransaction();
-
-            $mozo = auth()->user()->empleado;
-
-            $pedido = Pedido::create([
-                'idMesa' => null,
-                'idTipoPedido' => 3,
-                'costoPedido' => $this->montoTotal,
-                'idMozo' => $mozo->idEmpleado,
-                'fechaPedido' => now(),
-                'idModalidadPagoPedido' => $this->idModalidadPago,
-                'idEstadoPedido' => self::ESTADO_EN_PREPARACION,
-            ]);
-
-            // Guardar cada cliente con sus productos
-            foreach ($this->clientes as $index => $cliente) {
-                DetalleCliente::create([
-                    'idPedido' => $pedido->idPedido,
-                    'dniCliente' => $cliente['dni'],
-                    'nombreCliente' => $cliente['nombre'],
-                    'apellidoCliente' => $cliente['apellido'],
-                    'idTipoCliente' => $cliente['tipoCliente'],
-                    'razonSocial' => $cliente['razonSocial'],
-                    'celularCliente' => $cliente['celular'],
-                    'direccion' => $cliente['direccion'],
-                    'RUC' => $cliente['ruc'],
-                ]);
-
-                // Guardar productos de este cliente
-                if (isset($this->productosPorCliente[$index])) {
-                    foreach ($this->productosPorCliente[$index] as $prod) {
-                        DetallePedido::create([
-                            'idPedido' => $pedido->idPedido,
-                            'idProducto' => $prod['id'],
-                            'cantidadProductoPedido' => $prod['cantidad'],
-                            'precioUnitarioProductoPedido' => $prod['precio'],
-                            'dniPidente' => $cliente['dni'],
-                            'descripcionProductoPedido' => $prod['nombre'],
-                            'observacionProductoPedido' => $this->observacionesOrden,
-                        ]);
-
-                        // Actualizar stock
-                        $producto = Producto::find($prod['id']);
-                        $producto->stockProducto -= $prod['cantidad'];
-                        $producto->save();
-                    }
+                    // Actualizar stock
+                    $producto = Producto::find($idProducto);
+                    $producto->decrement('stockProducto', $item['cantidad']);
                 }
-            }
 
-            DB::commit();
+                return $pedido->idPedido; // Retornar el ID del pedido creado
+            });
 
-            $this->showSuccessAlert("Pedido para llevar dividido registrado correctamente.\nNúmero de orden: {$this->numeroOrden}", route('pedidos.para-llevar.index'));
+            // Redirigir directamente a la página de cobro
+            $this->successAlert(
+                title: '¡Pedido Registrado!',
+                text: "Pedido {$this->numeroOrden} creado. Proceda a realizar el cobro"
+            );
+
+            return redirect()->route('pedidos.cobrar', ['pedido' => $pedidoId]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            $this->showToast('Error al registrar el pedido: ' . $e->getMessage(), 'error');
+            $this->errorAlert(
+                title: 'Error',
+                text: 'No se pudo registrar el pedido: ' . $e->getMessage()
+            );
         }
     }
 
     public function render()
     {
-        return view('livewire.pedidos.para-llevar-create')->layout('layouts.app');
+        return view('livewire.pedidos.para-llevar-create')->layout('layouts.dashboard');
     }
 }

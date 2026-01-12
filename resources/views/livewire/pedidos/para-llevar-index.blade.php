@@ -99,9 +99,16 @@
                                 {{ \Carbon\Carbon::parse($pedido->fechaPedido)->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <button class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium">
+                                <button wire:click="verDetalle({{ $pedido->idPedido }})"
+                                    class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium mr-3">
                                     Ver Detalles
                                 </button>
+                                @if($pedido->idEstadoPedido == 1)
+                                    <a href="{{ route('pedidos.cobrar', $pedido->idPedido) }}"
+                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                                        Cobrar
+                                    </a>
+                                @endif
                             </td>
                         </tr>
                     @empty
