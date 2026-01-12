@@ -17,9 +17,9 @@ class Index extends Component
 
     public function render()
     {
-        // Pedidos enviados a cocina (estado 2)
-        $pedidosEnCocina = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detalles.preparaciones.estadoPreparacion', 'detalles.preparaciones.cocinero', 'detallesCliente'])
-            ->where('idEstadoPedido', 2) // Enviado a Cocina
+        // Pedidos enviados a cocina (estado 2) Y pedidos con pago validado (estado 9)
+        $pedidosEnCocina = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detalles.preparaciones.estadoPreparacion', 'detalles.preparaciones.cocinero', 'clienteRegistrado'])
+            ->whereIn('idEstadoPedido', [2, 9]) // Enviado a Cocina O Pago Validado
             ->orderBy('fechaPedido', 'asc')
             ->get();
 
@@ -141,12 +141,40 @@ class Index extends Component
     {
         try {
             $pedido = Pedido::findOrFail($idPedido);
-            $pedido->update(['idEstadoPedido' => 3]); // Entregado a Mozo
+            
+            // Si es pedido online (tipo 4), asignar a agente y cambiar a "Pendiente de Envío" (10)
+            if ($pedido->idTipoPedido == 4) {
+                // Buscar un agente de pedidos disponible (tipo empleado 6)
+                $agenteDisponible = \App\Models\Empleado::where('idTipoEmpleado', 6)
+                    ->where('idEstadoEmpleado', 1) // Activo
+                    ->first();
 
-            $this->successAlert(
-                title: '¡Entregado!',
-                text: 'Pedido entregado al mozo'
-            );
+                if (!$agenteDisponible) {
+                    $this->errorAlert(
+                        title: 'Sin agente disponible',
+                        text: 'No hay agentes de pedidos disponibles'
+                    );
+                    return;
+                }
+
+                $pedido->update([
+                    'idEstadoPedido' => 10, // Pendiente de Envío
+                    'idAgentePedidos' => $agenteDisponible->idEmpleado
+                ]);
+
+                $this->successAlert(
+                    title: '¡Asignado a Agente!',
+                    text: "Pedido asignado a {$agenteDisponible->nombreEmpleado}"
+                );
+            } else {
+                // Pedidos de salón/para llevar - entregar a mozo normal
+                $pedido->update(['idEstadoPedido' => 3]); // Entregado a Mozo
+
+                $this->successAlert(
+                    title: '¡Entregado!',
+                    text: 'Pedido entregado al mozo'
+                );
+            }
         } catch (\Exception $e) {
             $this->errorAlert(
                 title: 'Error',

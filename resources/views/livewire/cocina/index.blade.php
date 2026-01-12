@@ -61,7 +61,7 @@
                                         <div class="flex-1">
                                             <p class="text-sm font-medium text-gray-900 dark:text-white">
                                                 <span class="font-bold">{{ $detalle->cantidadProductoPedido }}x</span>
-                                                {{ $detalle->descripcionProductoPedido }}
+                                                {{ $detalle->producto->nombreProducto }}
                                             </p>
                                             @if($detalle->observacionProductoPedido)
                                                 <p class="text-xs text-orange-600 mt-1">
@@ -107,11 +107,11 @@
                             </div>
                         </div>
 
-                        @if($pedido->detallesCliente->isNotEmpty())
+                        @if($pedido->clienteRegistrado)
                             <div class="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                 <p><strong>Cliente:</strong>
-                                    {{ $pedido->detallesCliente->first()->nombreCliente }}
-                                    {{ $pedido->detallesCliente->first()->apellidoCliente }}
+                                    {{ $pedido->clienteRegistrado->nombreCliente }}
+                                    {{ $pedido->clienteRegistrado->apellidoCliente }}
                                 </p>
                             </div>
                         @endif
@@ -145,7 +145,11 @@
                                 wire:click="verificarYEntregar({{ $pedido->idPedido }})"
                                 class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
                                 <x-sidebar-icon icon="user-circle" class="w-5 h-5" />
-                                Entregar a Mozo
+                                @if($pedido->idTipoPedido == 4)
+                                    Marcar Listo para Envío
+                                @else
+                                    Entregar a Mozo
+                                @endif
                             </button>
                         @else
                             <div class="w-full px-4 py-2 bg-gray-300 text-gray-500 font-semibold rounded-lg text-center cursor-not-allowed">

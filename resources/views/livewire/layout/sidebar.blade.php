@@ -20,6 +20,12 @@ new class extends Component
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
+                    [
+                        'name' => 'Catálogo Web',
+                        'route' => 'catalogo.index',
+                        'icon' => 'shopping-cart',
+                        'permission' => null,
+                    ],
                 ],
             ],
             [
@@ -65,6 +71,19 @@ new class extends Component
                         'route' => 'mozo.index',
                         'icon' => 'user-circle',
                         'permission' => 'ver-pedidos',
+                    ],
+                    [
+                        'name' => 'Validar Pagos',
+                        'route' => 'cajero.validar-pagos',
+                        'icon' => 'currency-dollar',
+                        'permission' => 'validar-pagos',
+                    ],
+                    [
+                        'name' => 'Mis Entregas',
+                        'route' => 'agente-pedidos.mis-pedidos',
+                        'icon' => 'truck',
+                        'permission' => null, // Visible para agentes (filtrado por tipo de empleado)
+                        'tipo_empleado' => 6, // Solo Agente de Pedidos
                     ],
                     [
                         'name' => 'Mesas',
@@ -254,11 +273,19 @@ new class extends Component
     /**
      * Verifica si el usuario tiene permiso para ver un item del menú.
      */
-    public function canAccess(string $route, ?string $permission): bool
+    public function canAccess(string $route, ?string $permission, ?int $tipoEmpleado = null): bool
     {
         // Super admin tiene acceso a todo
         if (auth()->user()->hasRole('super-admin')) {
             return true;
+        }
+
+        // Si se especifica tipo de empleado, verificar que coincida
+        if ($tipoEmpleado !== null) {
+            $empleado = auth()->user()->empleado;
+            if (!$empleado || $empleado->idTipoEmpleado !== $tipoEmpleado) {
+                return false;
+            }
         }
 
         // Verificar acceso por ruta usando el sistema dinámico
@@ -299,12 +326,12 @@ new class extends Component
     <!-- Navigation Menu con scroll propio -->
     <nav class="flex-1 overflow-y-auto py-4 px-3">
         @foreach($this->getMenuItems() as $group)
-            @php /* Inicia codigo php dentro de una vista blade */
-                /* Primero declara una variable local llamada visible items que almacenará el resultado final de la operación.
-                    Luego con el metodo collet convertira $group['items'] en una coleccion de laravel.
-                    Se usa el metodo filter el cual va a iterar sobre cada item para comprobar que si tenga el permiso.
-                */
-                $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess($item['route'], $item['permission'] ?? null));
+            @php
+                $visibleItems = collect($group['items'])->filter(fn($item) => $this->canAccess(
+                    $item['route'], 
+                    $item['permission'] ?? null,
+                    $item['tipo_empleado'] ?? null
+                ));
             @endphp
 
             @if($visibleItems->isNotEmpty())

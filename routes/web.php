@@ -5,19 +5,14 @@ use App\Livewire\Empleados;
 
 Route::view('/', 'welcome');
 
-/* Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile'); */
-
 Route::middleware(['auth', 'verified', 'route.permission'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('profile', 'profile')->name('profile');
     Route::patch('profile/employee', [App\Http\Controllers\ProfileController::class, 'updateEmployee'])->name('profile.update-employee');
 
+    // Rutas del catálogo (dentro del dashboard)
+    require __DIR__.'/catalogo.php';
+    
     // Cargar rutas por módulo
     require __DIR__.'/empleados.php';
 
@@ -47,6 +42,10 @@ Route::middleware(['auth', 'verified', 'route.permission'])->group(function () {
     require __DIR__.'/roles.php';
     require __DIR__.'/usuarios.php';
     require __DIR__.'/orden-abastecimiento.php';
+    
+    // Nuevas rutas del sistema de e-commerce
+    require __DIR__.'/cajero.php';
+    require __DIR__.'/agente-pedidos.php';
 
    /*  require __DIR__.'/dashboard/pedidos.php';
     require __DIR__.'/dashboard/inventario.php';
