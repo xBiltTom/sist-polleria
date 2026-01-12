@@ -16,6 +16,7 @@ Route::view('profile', 'profile')
 Route::middleware(['auth', 'verified', 'route.permission'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('profile', 'profile')->name('profile');
+    Route::patch('profile/employee', [App\Http\Controllers\ProfileController::class, 'updateEmployee'])->name('profile.update-employee');
 
     // Cargar rutas por módulo
     require __DIR__.'/empleados.php';
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'verified', 'route.permission'])->group(function () {
     require __DIR__.'/pedidos.php';
 
     require __DIR__.'/estado-proveedor.php';
+    require __DIR__.'/estado-empleado.php';
     require __DIR__.'/contacto-proveedor.php';
     require __DIR__.'/proveedor.php';
     require __DIR__.'/insumo.php';

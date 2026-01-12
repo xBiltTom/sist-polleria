@@ -159,16 +159,16 @@ new class extends Component
                 'items' => [
                     [
                         'name' => 'Estado Empleado',
-                        'route' => 'dashboard',
+                        'route' => 'estado-empleado.index',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
-                    [
+                    /* [
                         'name' => 'Estado Cliente',
                         'route' => 'dashboard',
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
-                    ],
+                    ], */
                     [
                         'name' => 'Estado Pedido',
                         'route' => 'estados-pedido.index',
@@ -222,12 +222,12 @@ new class extends Component
                         'icon' => 'home',
                         'permission' => null, // Accesible para todos los autenticados
                     ],
-                    [
+                    /* [
                         'name' => 'Tipo de Pago Pedido',
                         'route' => 'tipos-pago-pedido.index',
                         'icon' => 'credit-card',
                         'permission' => null, // Accesible para todos los autenticados
-                    ],
+                    ], */
                     [
                         'name' => 'Tipo de Operacion en Almacen',
                         'route' => 'tipo-operacion-almacen.index',
