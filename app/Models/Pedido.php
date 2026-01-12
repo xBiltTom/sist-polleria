@@ -15,6 +15,8 @@ class Pedido extends Model
         'idTipoPedido',
         'costoPedido',
         'idMozo',
+        'idAgentePedidos',
+        'idCliente',
         'fechaPedido',
         'idModalidadPagoPedido',
         'idEstadoPedido'
@@ -40,12 +42,20 @@ class Pedido extends Model
         return $this->belongsTo(Empleado::class,'idMozo');
     }
 
+    public function agentePedidos(){
+        return $this->belongsTo(Empleado::class,'idAgentePedidos');
+    }
+
     public function modalidadPago(){
         return $this->belongsTo(ModalidadPagoPedido::class,'idModalidadPagoPedido');
     }
 
     public function estadoPedido(){
         return $this->belongsTo(EstadoPedido::class,'idEstadoPedido');
+    }
+
+    public function clienteRegistrado(){
+        return $this->belongsTo(ClienteRegistrado::class,'idCliente', 'idCliente');
     }
 
     public function detalles(){
