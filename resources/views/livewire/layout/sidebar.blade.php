@@ -97,7 +97,7 @@ new class extends Component
                     ],
                     [
                         'name' => 'Almacén',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'route' => 'operacion-almacen.index', // Cambiar por la ruta real
                         'icon' => 'building-storefront',
                         'permission' => 'ver-almacen',
                     ],
@@ -113,8 +113,8 @@ new class extends Component
                         'permission' => 'ver-proveedores',
                     ],
                     [
-                        'name' => 'Órdenes de Compra',
-                        'route' => 'dashboard', // Cambiar por la ruta real
+                        'name' => 'Órdenes de Abastecimiento',
+                        'route' => 'orden-abastecimiento.index', // Cambiar por la ruta real
                         'icon' => 'shopping-cart',
                         'permission' => 'ver-ordenes-compra',
                     ],

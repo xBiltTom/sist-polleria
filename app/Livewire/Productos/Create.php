@@ -4,6 +4,7 @@ namespace App\Livewire\Productos;
 
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
+use App\Services\OperacionAlmacenService;
 use App\Traits\WithSweetAlert;
 use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
@@ -80,7 +81,11 @@ class Create extends Component
 
             $validated['estadoDB'] = true;
 
-            Producto::create($validated);
+            $producto = Producto::create($validated);
+
+            // Registrar la operación de almacén (Creación)
+            $operacionService = app(OperacionAlmacenService::class);
+            $operacionService->registrarCreacion($producto);
 
             session()->flash('swal', [
                 'title' => '¡Registrado!',

@@ -4,6 +4,7 @@ namespace App\Livewire\Productos;
 
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
+use App\Services\OperacionAlmacenService;
 use App\Traits\WithSweetAlert;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -57,6 +58,11 @@ class Index extends Component
     {
         try {
             $producto = Producto::findOrFail($id);
+
+            // Registrar operación de almacén (Eliminación) antes de desactivar
+            $operacionService = app(OperacionAlmacenService::class);
+            $operacionService->registrarEliminacion($producto);
+
             $producto->update(['estadoDB' => false]);
 
             $this->successAlert(

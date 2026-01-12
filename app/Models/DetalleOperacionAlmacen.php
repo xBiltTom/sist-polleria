@@ -15,7 +15,12 @@ class DetalleOperacionAlmacen extends Model
         'nroDetalleOperacion',
         'idProducto',
         'cantidadProducto',
-        'nombreProducto'
+        'nombreProducto',
+        'fechaDetalleOperacion'
+    ];
+
+    protected $casts = [
+        'fechaDetalleOperacion' => 'datetime'
     ];
 
     protected static function boot(){
@@ -35,4 +40,8 @@ class DetalleOperacionAlmacen extends Model
         return $this->belongsTo(OperacionAlmacen::class, 'idOperacionAlmacen');
     }
 
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class, 'idProducto');
+    }
 }

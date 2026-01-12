@@ -4,6 +4,7 @@ namespace App\Livewire\Productos;
 
 use App\Models\Producto;
 use App\Models\CategoriaProducto;
+use App\Services\OperacionAlmacenService;
 use App\Traits\WithSweetAlert;
 use App\Traits\WithCloudinaryUpload;
 use Livewire\Component;
@@ -86,6 +87,9 @@ class Edit extends Component
         try {
             $validated = $this->validate();
 
+            // Guardar el stock anterior para detectar cambios
+            $stockAnterior = $this->producto->stockProducto;
+
             // Procesar subida de imagen a Cloudinary
             if ($this->imagenProducto) {
                 try {
@@ -111,6 +115,10 @@ class Edit extends Component
             unset($validated['imagenProducto']);
 
             $this->producto->update($validated);
+
+            // Registrar operación de almacén si hubo cambio en el stock
+            $operacionService = app(OperacionAlmacenService::class);
+            $operacionService->registrarCambioStock($this->producto->fresh(), $stockAnterior);
 
             session()->flash('swal', [
                 'title' => '¡Actualizado!',
