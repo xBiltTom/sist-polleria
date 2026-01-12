@@ -31,7 +31,7 @@ class Index extends Component
             ->get();
 
         // Pedidos entregados al mozo (estado 3) - Listos para entregar a comensales
-        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido', 'pagos'])
+        $pedidosParaEntregar = Pedido::with(['mesa', 'detalles.producto', 'estadoPedido', 'detallesCliente', 'tipoPedido'])
             ->where('idEstadoPedido', 3) // Entregado a Mozo
             ->where('idMozo', $empleadoId)
             ->orderBy('fechaPedido', 'asc')
@@ -188,8 +188,8 @@ class Index extends Component
                 return;
             }
 
-            // Si el pedido ya fue cobrado (tiene pagos), cambiar a estado 7 (Cobrado/Finalizado)
-            // Si no fue cobrado, cambiar a estado 5 (Entregado a Comensales)
+            // Cambiar a estado 7 (Cobrado) ya que Para Llevar se cobra antes de cocina
+            // Si ya tiene pago registrado, marcar como Cobrado (7), sino como Entregado (5)
             $nuevoEstado = $pedido->pagos->isNotEmpty() ? 7 : 5;
             $pedido->update(['idEstadoPedido' => $nuevoEstado]);
 

@@ -79,11 +79,14 @@ class Historial extends Component
 
         // Estadísticas del día
         $totalPedidosHoy = Pedido::whereDate('fechaPedido', now())->count();
+        
+        // Ventas del día: pedidos cobrados (7), pago validado (9), y recibidos (12)
         $totalVentasHoy = Pedido::whereDate('fechaPedido', now())
-            ->where('idEstadoPedido', 7) // Cobrado
+            ->whereIn('idEstadoPedido', [7, 9, 12]) // Cobrado, Pago Validado, Recibido
             ->sum('costoPedido');
+            
         $pedidosEnProceso = Pedido::whereDate('fechaPedido', now())
-            ->whereIn('idEstadoPedido', [2, 3, 4, 5]) // En preparación, Terminado, Entregado a Mozo, Entregado a Comensales
+            ->whereIn('idEstadoPedido', [1, 2, 3, 4, 5, 6, 10, 11]) // Estados activos no finalizados
             ->count();
 
         return view('livewire.pedidos.historial', [

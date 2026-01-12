@@ -149,7 +149,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @forelse($pedidosParaEntregar as $pedido)
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 {{ $pedido->idTipoPedido == 3 ? 'border-green-500' : 'border-purple-500' }} p-4 hover:shadow-xl transition">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 border-purple-500 p-4 hover:shadow-xl transition">
                             <!-- Encabezado -->
                             <div class="flex justify-between items-start mb-3">
                                 <div>
@@ -164,18 +164,12 @@
                                                 <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                                             </svg>
                                             <p class="text-sm font-semibold text-green-700 dark:text-green-400">
-                                                🛍️ PARA LLEVAR
+                                                PARA LLEVAR
                                             </p>
                                         </div>
-                                        <!-- Indicador de YA COBRADO (solo si tiene pagos) -->
-                                        @if($pedido->pagos->isNotEmpty())
-                                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full mt-1">
-                                                ✅ YA COBRADO
-                                            </span>
-                                        @endif
                                         @if($pedido->detallesCliente->isNotEmpty())
                                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                                Cliente: {{ $pedido->detallesCliente->first()->nombreCliente }}
+                                                {{ $pedido->detallesCliente->first()->nombreCliente }}
                                                 {{ $pedido->detallesCliente->first()->apellidoCliente }}
                                             </p>
                                         @endif

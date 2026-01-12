@@ -67,8 +67,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver-clientes',
         ]);
 
+        $cocineroRole = Role::firstOrCreate(['name' => 'cocinero', 'guard_name' => 'web']);
+        $cocineroRole->givePermissionTo([
+            'ver-productos',
+        ]);
+
         $this->command->info('Roles y permisos creados correctamente.');
-        $this->command->info('Roles creados: super-admin, administrador, cajero, mozo');
+        $this->command->info('Roles creados: super-admin, administrador, cajero, mozo, cocinero');
         $this->command->info('Total de permisos: ' . Permission::count());
     }
 }

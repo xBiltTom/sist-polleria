@@ -21,7 +21,7 @@ class ParaLlevarCreate extends Component
     const ESTADO_COBRADO = 7;
     const ESTADO_CANCELADO = 8;
 
-    // Steps del proceso (ahora 4 pasos)
+    // Steps del proceso
     public $step = 1;
 
     // Datos del cliente
@@ -47,17 +47,14 @@ class ParaLlevarCreate extends Component
     public $observacionesOrden = '';
     public $horaRecojo;
 
-    // Datos de pago (nuevo)
-    public $idTipoPago;
-    public $montoPagado = 0;
-    public $vuelto = 0;
+    // Propiedades para el cobro
+    public $pedidoCreado = null;
     public $tiposPago = [];
+    public $idTipoPago = 1;
+    public $tipoComprobante = 1; // 1 = Boleta, 2 = Factura
+    public $montoPagado = 0;
 
-    // Datos del pago realizado
-    public $pagoRealizado = null;
-    public $nroComprobante = null;
-
-    protected $listeners = ['registrarPedido', 'procesarPagoYEnviar', 'enviarACocina'];
+    protected $listeners = ['registrarPedido', 'procesarPagoYEnviar'];
 
     public function mount()
     {
@@ -77,6 +74,7 @@ class ParaLlevarCreate extends Component
 
         // Cargar tipos de pago
         $this->tiposPago = TipoPagoPedido::where('estadoDB', 1)->get();
+        $this->montoPagado = 0;
     }
 
     public function rules()
@@ -103,13 +101,6 @@ class ParaLlevarCreate extends Component
 
         if ($this->step === 3) {
             return [
-                'idTipoPago' => 'required|exists:tipo_pago_pedido,idTipoPagoPedido',
-                'montoPagado' => 'required|numeric|min:' . $this->montoTotal,
-            ];
-        }
-
-        if ($this->step === 4) {
-            return [
                 'horaRecojo' => 'required',
                 'observacionesOrden' => 'nullable|string|max:500',
             ];
@@ -131,20 +122,7 @@ class ParaLlevarCreate extends Component
             'celular.required' => 'El celular es obligatorio para contactar al cliente',
             'direccion.required' => 'La dirección es obligatoria',
             'horaRecojo.required' => 'Debe especificar la hora de recojo',
-            'idTipoPago.required' => 'Debe seleccionar un tipo de pago',
-            'montoPagado.required' => 'Debe ingresar el monto recibido',
-            'montoPagado.min' => 'El monto recibido debe ser igual o mayor al total',
         ];
-    }
-
-    public function updatedMontoPagado()
-    {
-        $this->calcularVuelto();
-    }
-
-    public function calcularVuelto()
-    {
-        $this->vuelto = max(0, $this->montoPagado - $this->montoTotal);
     }
 
     public function siguienteStep()
@@ -158,16 +136,14 @@ class ParaLlevarCreate extends Component
                 session()->flash('error', 'Debe agregar al menos un producto al pedido');
                 return;
             }
-            // Inicializar monto pagado con el total
-            $this->montoPagado = $this->montoTotal;
-            $this->calcularVuelto();
             $this->step = 3;
+            $this->montoPagado = $this->montoTotal;
         } elseif ($this->step === 3) {
-            $this->validate();
+            // Validar cobro y proceder
             $this->confirmarCobro();
         } elseif ($this->step === 4) {
-            $this->validate();
-            $this->confirmarEnvioACocina();
+            // Enviar a cocina
+            $this->enviarACocina();
         }
     }
 
@@ -287,11 +263,17 @@ class ParaLlevarCreate extends Component
 
     public function confirmarCobro()
     {
-        $tipoComprobante = $this->tipoPersona === 'natural' ? 'Boleta' : 'Factura';
-        
+        if ($this->montoPagado < $this->montoTotal) {
+            $this->errorAlert(
+                title: 'Monto insuficiente',
+                text: 'El monto pagado debe ser igual o mayor al total'
+            );
+            return;
+        }
+
         $this->confirmAlert(
-            title: '¿Procesar cobro?',
-            text: "Total: S/ " . number_format($this->montoTotal, 2) . " | Recibido: S/ " . number_format($this->montoPagado, 2) . " | Vuelto: S/ " . number_format($this->vuelto, 2) . " | Comprobante: {$tipoComprobante}",
+            title: '¿Procesar pago y generar boleta?',
+            text: "Total: S/ " . number_format($this->montoTotal, 2) . " - Vuelto: S/ " . number_format($this->montoPagado - $this->montoTotal, 2),
             confirmButtonText: 'Sí, cobrar',
             method: 'procesarPagoYEnviar'
         );
@@ -309,11 +291,11 @@ class ParaLlevarCreate extends Component
                 // Determinar ID de tipo de cliente: 1 = Natural, 2 = Jurídica
                 $idTipoCliente = $this->tipoPersona === 'natural' ? 1 : 2;
 
-                // 1. Crear el pedido en estado PENDIENTE (se actualizará después del pago)
+                // 1. Crear el pedido con estado PENDIENTE (aún no va a cocina)
                 $pedido = Pedido::create([
                     'idMesa' => null, // No hay mesa en para llevar
                     'idModalidadPagoPedido' => 1, // Siempre pago total
-                    'idEstadoPedido' => self::ESTADO_COBRADO, // Ya está cobrado
+                    'idEstadoPedido' => self::ESTADO_PENDIENTE, // Pendiente hasta confirmar envío a cocina
                     'costoPedido' => $this->montoTotal,
                     'fechaPedido' => now(),
                     'idMozo' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
@@ -381,36 +363,28 @@ class ParaLlevarCreate extends Component
                     $producto->decrement('stockProducto', $item['cantidad']);
                 }
 
-                // 4. Procesar el pago y generar comprobante
-                $idTipoComprobante = $this->tipoPersona === 'natural' ? 1 : 2; // 1 = Boleta, 2 = Factura
-                $igv = $idTipoComprobante == 2 ? round($this->montoTotal * 0.18, 2) : 0;
-                $this->nroComprobante = NumeracionComprobante::generarNumeroComprobante($idTipoComprobante);
-                $nroOperacion = now()->format('ymdHi');
-
-                $this->pagoRealizado = PagoPedido::create([
+                // 4. Registrar el pago
+                PagoPedido::create([
                     'idPedido' => $pedido->idPedido,
+                    'montoPagoPedido' => $this->montoPagado,
                     'idTipoPagoPedido' => $this->idTipoPago,
-                    'monto' => $this->montoTotal,
-                    'recibido' => $this->montoPagado,
-                    'vuelto' => $this->vuelto,
-                    'dniPagante' => $clienteData['dni'] ?? $clienteData['ruc'],
-                    'idTipoComprobante' => $idTipoComprobante,
-                    'IGV' => $igv,
-                    'nroBoleta' => $idTipoComprobante == 1 ? $this->nroComprobante : null,
-                    'nroFactura' => $idTipoComprobante == 2 ? $this->nroComprobante : null,
-                    'nroOperacion' => $nroOperacion,
+                    'fechaPago' => now(),
+                    'estadoValidacion' => 'aprobado',
                 ]);
 
-                // Guardar el ID del pedido para usarlo después
-                $this->pedidoId = $pedido->idPedido;
+                // 5. Generar número de comprobante usando el método del modelo
+                $tipoComprobante = $this->tipoPersona === 'juridica' ? 2 : 1; // Factura o Boleta
+                NumeracionComprobante::generarNumeroComprobante($tipoComprobante);
+
+                $this->pedidoCreado = $pedido;
             });
 
-            // Pasar al paso 4 para confirmar envío a cocina
+            // Avanzar al paso 4 para confirmar envío a cocina
             $this->step = 4;
             
             $this->successAlert(
-                title: '¡Pago procesado!',
-                text: "Comprobante generado: {$this->nroComprobante}. Ahora puede enviar el pedido a cocina."
+                title: '¡Pago registrado!',
+                text: 'Ahora puede enviar el pedido a cocina'
             );
 
         } catch (\Exception $e) {
@@ -421,28 +395,20 @@ class ParaLlevarCreate extends Component
         }
     }
 
-    public $pedidoId = null;
-
-    public function confirmarEnvioACocina()
-    {
-        $this->confirmAlert(
-            title: '¿Enviar pedido a cocina?',
-            text: "El pedido será enviado a cocina para su preparación",
-            confirmButtonText: 'Sí, enviar',
-            method: 'enviarACocina'
-        );
-    }
-
     public function enviarACocina()
     {
+        if (!$this->pedidoCreado) {
+            $this->errorAlert(title: 'Error', text: 'No hay pedido para enviar');
+            return;
+        }
+
         try {
-            // Actualizar estado del pedido a EN_PREPARACION
-            $pedido = Pedido::find($this->pedidoId);
-            $pedido->update(['idEstadoPedido' => self::ESTADO_EN_PREPARACION]);
+            // Cambiar estado a En Preparación (enviado a cocina)
+            $this->pedidoCreado->update(['idEstadoPedido' => self::ESTADO_EN_PREPARACION]);
 
             $this->successAlert(
-                title: '¡Pedido enviado a cocina!',
-                text: "El pedido {$this->numeroOrden} ha sido enviado a cocina para su preparación. El cliente podrá recogerlo a las {$this->horaRecojo}."
+                title: '¡Enviado a Cocina!',
+                text: "Pedido {$this->numeroOrden} enviado a cocina. El cliente puede esperar."
             );
 
             return redirect()->route('pedidos.para-llevar.index');
@@ -450,120 +416,7 @@ class ParaLlevarCreate extends Component
         } catch (\Exception $e) {
             $this->errorAlert(
                 title: 'Error',
-                text: 'No se pudo enviar el pedido a cocina: ' . $e->getMessage()
-            );
-        }
-    }
-
-    public function confirmarRegistroPedido()
-    {
-        $this->confirmAlert(
-            title: '¿Registrar pedido para llevar?',
-            text: "Total: S/ " . number_format($this->montoTotal, 2) . " - El pedido será enviado a cocina",
-            confirmButtonText: 'Sí, registrar',
-            method: 'registrarPedido'
-        );
-    }
-
-    public function registrarPedido()
-    {
-        if (empty($this->productosSeleccionados)) {
-            $this->errorAlert(title: 'Error', text: 'Debe agregar al menos un producto');
-            return;
-        }
-
-        try {
-            $pedidoId = DB::transaction(function () {
-                // Determinar ID de tipo de cliente: 1 = Natural, 2 = Jurídica
-                $idTipoCliente = $this->tipoPersona === 'natural' ? 1 : 2;
-
-                // 1. Crear el pedido
-                $pedido = Pedido::create([
-                    'idMesa' => null, // No hay mesa en para llevar
-                    'idModalidadPagoPedido' => 1, // Siempre pago total
-                    'idEstadoPedido' => self::ESTADO_EN_PREPARACION, // Enviar directo a cocina
-                    'costoPedido' => $this->montoTotal,
-                    'fechaPedido' => now(),
-                    'idMozo' => auth()->user()->empleado?->idEmpleado ?? auth()->id(),
-                    'idTipoPedido' => 3, // 3 = Para Llevar
-                ]);
-
-                // 2. Registrar cliente
-                $clienteData = [
-                    'nombre' => $this->nombreCliente,
-                    'apellido' => $this->apellidoCliente,
-                    'idTipoCliente' => $idTipoCliente,
-                    'dni' => $this->tipoPersona === 'natural' ? $this->documento : $this->dniRepresentante,
-                    'ruc' => $this->tipoPersona === 'juridica' ? $this->documento : null,
-                    'celular' => $this->celular,
-                    'direccion' => $this->direccion,
-                    'razonSocial' => $this->tipoPersona === 'juridica' ? $this->razonSocial : null,
-                ];
-
-                // Guardar en detalle_clientes
-                DetalleCliente::create([
-                    'idPedido' => $pedido->idPedido,
-                    'nombreCliente' => $clienteData['nombre'],
-                    'apellidoCliente' => $clienteData['apellido'],
-                    'idTipoCliente' => $clienteData['idTipoCliente'],
-                    'dniCliente' => $clienteData['dni'],
-                    'RUC' => $clienteData['ruc'],
-                    'celularCliente' => $clienteData['celular'],
-                    'direccion' => $clienteData['direccion'],
-                    'razonSocial' => $clienteData['razonSocial'],
-                ]);
-
-                // Guardar en clientes_registrados (solo si no existe)
-                ClienteRegistrado::firstOrCreate(
-                    [
-                        'dniCliente' => $clienteData['dni'],
-                        'RUC' => $clienteData['ruc'],
-                    ],
-                    [
-                        'nombreCliente' => $clienteData['nombre'],
-                        'apellidoCliente' => $clienteData['apellido'],
-                        'idTipoCliente' => $clienteData['idTipoCliente'],
-                        'RUC' => $clienteData['ruc'],
-                        'dniCliente' => $clienteData['dni'],
-                        'celularCliente' => $clienteData['celular'],
-                        'direccionCliente' => $clienteData['direccion'],
-                        'razonSocial' => $clienteData['razonSocial'],
-                        'estadoCliente' => 1,
-                        'estadoDB' => 1,
-                    ]
-                );
-
-                // 3. Registrar productos
-                foreach ($this->productosSeleccionados as $idProducto => $item) {
-                    DetallePedido::create([
-                        'idPedido' => $pedido->idPedido,
-                        'idProducto' => $idProducto,
-                        'cantidadProductoPedido' => $item['cantidad'],
-                        'precioUnitarioProductoPedido' => $item['precio'],
-                        'dniPidente' => $clienteData['dni'] ?? $clienteData['ruc'],
-                        'descripcionProductoPedido' => $item['producto']->nombreProducto,
-                    ]);
-
-                    // Actualizar stock
-                    $producto = Producto::find($idProducto);
-                    $producto->decrement('stockProducto', $item['cantidad']);
-                }
-
-                return $pedido->idPedido; // Retornar el ID del pedido creado
-            });
-
-            // Redirigir directamente a la página de cobro
-            $this->successAlert(
-                title: '¡Pedido Registrado!',
-                text: "Pedido {$this->numeroOrden} creado. Proceda a realizar el cobro"
-            );
-
-            return redirect()->route('pedidos.cobrar', ['pedido' => $pedidoId]);
-
-        } catch (\Exception $e) {
-            $this->errorAlert(
-                title: 'Error',
-                text: 'No se pudo registrar el pedido: ' . $e->getMessage()
+                text: 'No se pudo enviar a cocina: ' . $e->getMessage()
             );
         }
     }

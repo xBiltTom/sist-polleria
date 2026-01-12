@@ -433,6 +433,6 @@ class DeliveryCreate extends Component
 
     public function render()
     {
-        return view('livewire.pedidos.delivery-create')->layout('layouts.app');
+        return view('livewire.pedidos.delivery-create')->layout('layouts.dashboard');
     }
 }

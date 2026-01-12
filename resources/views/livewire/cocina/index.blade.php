@@ -27,8 +27,9 @@
                     @php
                         $esParaLlevar = $pedido->idTipoPedido == 3;
                         $esDelivery = $pedido->idTipoPedido == 2;
-                        $borderColor = $esParaLlevar ? 'border-green-500' : ($esDelivery ? 'border-orange-500' : 'border-blue-500');
-                        $bgBadge = $esParaLlevar ? 'bg-green-100 text-green-800' : ($esDelivery ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800');
+                        $esOnline = $pedido->idTipoPedido == 4;
+                        $borderColor = $esParaLlevar ? 'border-green-500' : ($esDelivery ? 'border-orange-500' : ($esOnline ? 'border-purple-500' : 'border-blue-500'));
+                        $bgBadge = $esParaLlevar ? 'bg-green-100 text-green-800' : ($esDelivery ? 'bg-orange-100 text-orange-800' : ($esOnline ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'));
                     @endphp
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 {{ $borderColor }} p-4">
                         <div class="flex justify-between items-start mb-3">
@@ -45,16 +46,34 @@
                                         <span class="px-2 py-1 text-xs font-bold bg-orange-500 text-white rounded-full flex items-center gap-1">
                                             🛵 DELIVERY
                                         </span>
+                                    @elseif($esOnline)
+                                        <span class="px-2 py-1 text-xs font-bold bg-purple-500 text-white rounded-full flex items-center gap-1">
+                                            🌐 ONLINE
+                                        </span>
                                     @endif
                                 </div>
                                 @if($pedido->mesa)
                                     <p class="text-sm text-gray-600 dark:text-gray-400">
                                         Mesa: {{ $pedido->mesa->nroMesa }}
                                     </p>
-                                @elseif($esParaLlevar && $pedido->detallesCliente->first())
-                                    <p class="text-sm text-green-600 dark:text-green-400 font-medium">
+                                @elseif(($esParaLlevar || $esDelivery) && $pedido->detallesCliente->first())
+                                    <p class="text-sm {{ $esParaLlevar ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400' }} font-medium">
                                         Cliente: {{ $pedido->detallesCliente->first()->nombreCliente }} {{ $pedido->detallesCliente->first()->apellidoCliente }}
                                     </p>
+                                    @if($esDelivery && $pedido->detallesCliente->first()->direccion)
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                            📍 {{ Str::limit($pedido->detallesCliente->first()->direccion, 40) }}
+                                        </p>
+                                    @endif
+                                @elseif($esOnline && $pedido->clienteRegistrado)
+                                    <p class="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                                        Cliente: {{ $pedido->clienteRegistrado->nombreCliente }} {{ $pedido->clienteRegistrado->apellidoCliente }}
+                                    </p>
+                                    @if($pedido->clienteRegistrado->direccion)
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                            📍 {{ Str::limit($pedido->clienteRegistrado->direccion, 40) }}
+                                        </p>
+                                    @endif
                                 @endif
                             </div>
                             <div class="text-right">
@@ -64,7 +83,7 @@
                                 <span class="inline-block px-2 py-1 text-xs font-semibold {{ $bgBadge }} rounded-full">
                                     En Cocina
                                 </span>
-                                @if($esParaLlevar && $pedido->pagos->isNotEmpty())
+                                @if(($esParaLlevar || $esOnline || $esDelivery) && $pedido->pagos->isNotEmpty())
                                     <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
                                         ✅ YA COBRADO
                                     </p>
@@ -87,7 +106,7 @@
                                         <div class="flex-1">
                                             <p class="text-sm font-medium text-gray-900 dark:text-white">
                                                 <span class="font-bold">{{ $detalle->cantidadProductoPedido }}x</span>
-                                                {{ $detalle->descripcionProductoPedido }}
+                                                {{ $detalle->producto->nombreProducto }}
                                             </p>
                                             @if($detalle->observacionProductoPedido)
                                                 <p class="text-xs text-orange-600 mt-1">
@@ -133,11 +152,11 @@
                             </div>
                         </div>
 
-                        @if($pedido->detallesCliente->isNotEmpty())
+                        @if($pedido->clienteRegistrado)
                             <div class="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                 <p><strong>Cliente:</strong>
-                                    {{ $pedido->detallesCliente->first()->nombreCliente }}
-                                    {{ $pedido->detallesCliente->first()->apellidoCliente }}
+                                    {{ $pedido->clienteRegistrado->nombreCliente }}
+                                    {{ $pedido->clienteRegistrado->apellidoCliente }}
                                 </p>
                             </div>
                         @endif
@@ -171,7 +190,11 @@
                                 wire:click="verificarYEntregar({{ $pedido->idPedido }})"
                                 class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
                                 <x-sidebar-icon icon="user-circle" class="w-5 h-5" />
-                                Entregar a Mozo
+                                @if($pedido->idTipoPedido == 4)
+                                    Marcar Listo para Envío
+                                @else
+                                    Entregar a Mozo
+                                @endif
                             </button>
                         @else
                             <div class="w-full px-4 py-2 bg-gray-300 text-gray-500 font-semibold rounded-lg text-center cursor-not-allowed">
